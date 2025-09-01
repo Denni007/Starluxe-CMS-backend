@@ -4,6 +4,9 @@ import sequelize from "./database/db.js";   // Sequelize instance
 import dotenv from "dotenv";
 import industryRouter from "./routers/industryRouter.js";
 import userRouter from "./routers/userRouter.js";
+import businessRouter from "./routers/businessRouter.js";
+import branchRouter from "./routers/branchRouter.js";
+import roleRouter from "./routers/roleRouter.js";
 
 dotenv.config(); // Load .env variables
 
@@ -15,7 +18,8 @@ const allowedOrigins = [process.env.CLIENT_URL || "http://localhost:3000"];
 // CORS options
 const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
+    // if (!origin || allowedOrigins.includes(origin)) {
+    if(origin) {
       callback(null, true);
     } else {
       const error = new Error("Not allowed by CORS");
@@ -50,6 +54,10 @@ app.get("/test", (req, res) => {
 
 app.use("/api/industry", industryRouter);
 app.use("/api/user", userRouter);
+app.use("/api/business", businessRouter);
+app.use("/api/business", businessRouter);
+app.use("/api/branch", branchRouter); 
+app.use("/api/role", roleRouter);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -67,8 +75,8 @@ app.use((err, req, res, next) => {
     console.log("✅ Database connected");
 
     // Sync tables based on models
+    // await sequelize.sync({ force: true });
     await sequelize.sync();
-
     console.log("✅ Database synced");
 
     const PORT = process.env.PORT || 4000;

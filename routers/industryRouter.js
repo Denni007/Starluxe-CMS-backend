@@ -5,7 +5,7 @@ import IsAuth from "../middleware/auth.js";
 const router = express.Router();
 
 // 🔹 Get all industries
-router.get("/", IsAuth, async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const industries = await Industry.findAll({
       order: [["name", "ASC"]],
@@ -17,7 +17,7 @@ router.get("/", IsAuth, async (req, res) => {
 });
 
 // 🔹 Add new industry
-router.post("/", IsAuth, async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const payload = req.body;
 
@@ -40,7 +40,7 @@ router.post("/", IsAuth, async (req, res) => {
 
 
 // 🔹 Get industry by ID
-router.get("/:id", IsAuth, async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
     const industry = await Industry.findByPk(req.params.id);
     if (!industry) {
@@ -53,7 +53,7 @@ router.get("/:id", IsAuth, async (req, res) => {
 });
 
 // 🔹 Update industry
-router.put("/:id", IsAuth, async (req, res) => {
+router.put("/:id", async (req, res) => {
   try {
     const { name } = req.body;
     const industry = await Industry.findByPk(req.params.id);
@@ -72,7 +72,7 @@ router.put("/:id", IsAuth, async (req, res) => {
 });
 
 // 🔹 Delete industry
-router.delete("/:id", IsAuth, async (req, res) => {
+router.delete("/:id", async (req, res) => {
   try {
     const industry = await Industry.findByPk(req.params.id);
 

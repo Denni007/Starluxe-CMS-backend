@@ -49,7 +49,7 @@ const User = sequelize.define(
 
     dob: {
       type: DataTypes.DATEONLY,
-      allowNull: false,
+      allowNull: true,
     },
 
     gender: {

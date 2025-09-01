@@ -52,7 +52,6 @@ router.post("/signup", async (req, res) => {
       mobile_number,
       password: hashedPassword,
       user_name,
-      dob,
       gender,
     });
 
@@ -89,7 +88,7 @@ router.post("/login", async (req, res) => {
     if (!email || !password) {
       return res
         .status(400)
-        .json({ error: "email/user_name and password are required" });
+        .json({ error: "email/username and password are required" });
     }
 
     const user = await User.findOne({
@@ -108,14 +107,15 @@ router.post("/login", async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user.id }, // payload
-      "passwordKey", // secret (move to env variable!)
+      { id: user.id }, 
+      "passwordKey", 
       { expiresIn: "1h" }
     );
 
     res.status(200).json({
       message: "Login successful",
       token,
+      user: { id: user.id, email: user.email, user_name: user.user_name, first_name: user.first_name, last_name: user.last_name, mobile_number: user.mobile_number}
     });
   } catch (err) {
     console.error("❌ Login error:", err.message);
