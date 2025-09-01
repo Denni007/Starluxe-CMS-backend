@@ -2,6 +2,7 @@ import express from "express";
 import User from "../models/userModel.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { Op } from "sequelize";
 
 const router = express.Router();
 
@@ -93,14 +94,20 @@ router.post("/signup", async (req, res) => {
 // 📌 Login User
 router.post("/login", async (req, res) => {
   try {
-    const { user_name, password } = req.body;
+    const { emailOrUsername, password } = req.body;
 
-    if (!user_name || !password) {
-      return res.status(400).json({ error: "user_name and password are required" });
+    if (!emailOrUsername || !password) {
+      return res
+        .status(400)
+        .json({ error: "email/user_name and password are required" });
     }
 
-    // ✅ Find user by user_name only
-    const user = await User.findOne({ where: { user_name } });
+    // ✅ Find user by email OR user_name
+    const user = await User.findOne({
+      where: {
+        [Op.or]: [{ email: emailOrUsername }, { user_name: emailOrUsername }],
+      },
+    });
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
@@ -115,13 +122,13 @@ router.post("/login", async (req, res) => {
     // ✅ Generate JWT token
     const token = jwt.sign(
       { id: user.id }, // payload
-      "passwordKey",   // secret (store in env file ideally)
-      { expiresIn: "1h" } // token expiry
+      "passwordKey", // secret (move to env variable!)
+      { expiresIn: "1h" }
     );
 
     res.status(200).json({
       message: "Login successful",
-      token, // return token to frontend
+      token,
     });
   } catch (err) {
     console.error("❌ Login error:", err.message);
