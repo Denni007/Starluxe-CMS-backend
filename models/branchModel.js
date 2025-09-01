@@ -61,7 +61,6 @@ const Branch = sequelize.define(
   }
 );
 
-Branch.belongsTo(Business, { foreignKey: "business_id" });
 Business.hasMany(Branch, { foreignKey: "business_id" });
 
 Branch.belongsTo(User, { as: "creator", foreignKey: "created_by" });

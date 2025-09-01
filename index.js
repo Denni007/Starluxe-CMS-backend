@@ -75,8 +75,8 @@ app.use((err, req, res, next) => {
     console.log("✅ Database connected");
 
     // Sync tables based on models
-    // await sequelize.sync({ force: true });
-    await sequelize.sync();
+    await sequelize.sync({ force: true });
+    // await sequelize.sync();
     console.log("✅ Database synced");
 
     const PORT = process.env.PORT || 4000;
