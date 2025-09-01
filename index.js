@@ -7,8 +7,14 @@ import userRouter from "./routers/userRouter.js";
 import businessRouter from "./routers/businessRouter.js";
 import branchRouter from "./routers/branchRouter.js";
 import roleRouter from "./routers/roleRouter.js";
+import permissionRouter from "./routers/permissionRouter.js";
+import assignmentsRoute from "./routers/assignments.js"
+import authRouter from "./routers/authRouter.js";
+
+import runSeeds from "./seeds/seeds.js";
 
 dotenv.config(); // Load .env variables
+runSeeds();
 
 const app = express();
 
@@ -19,7 +25,7 @@ const allowedOrigins = [process.env.CLIENT_URL || "http://localhost:3000"];
 const corsOptions = {
   origin: (origin, callback) => {
     // if (!origin || allowedOrigins.includes(origin)) {
-    if(origin) {
+    if(!origin) {
       callback(null, true);
     } else {
       const error = new Error("Not allowed by CORS");
@@ -51,14 +57,14 @@ app.use(express.json({ limit: "50mb" })); // no need for body-parser
 app.get("/test", (req, res) => {
   res.send("✅ API is working fine!");
 });
-
-app.use("/api/industry", industryRouter);
+// seedAdmin()
+app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
-app.use("/api/business", businessRouter);
-app.use("/api/business", businessRouter);
-app.use("/api/branch", branchRouter); 
-app.use("/api/role", roleRouter);
-
+app.use("/api/businesses", businessRouter);
+app.use("/api/branches", branchRouter);
+app.use("/api/roles", roleRouter);
+app.use("/api/permissions", permissionRouter);
+app.use("/api/assignments", assignmentsRoute);
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error("❌ Error:", err.stack);

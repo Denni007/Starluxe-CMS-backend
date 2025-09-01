@@ -1,6 +1,7 @@
 // routes/businessRoutes.js
 import express from "express";
-import Business from "../models/businessModel.js";
+import {Business} from "../models/index.js";
+// "../models/index.js";
 import IsAuth from "../middleware/auth.js";
 
 const router = express.Router();
