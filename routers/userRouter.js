@@ -17,18 +17,15 @@ router.post("/signup", async (req, res) => {
       password,
       password_confirmation,
       user_name,
-      dob,
       gender,
     } = req.body;
 
-    // ✅ Check all mandatory fields
     if (
       !email ||
       !first_name ||
       !last_name ||
       !mobile_number ||
       !user_name ||
-      !dob ||
       !gender ||
       !password ||
       !password_confirmation
@@ -36,22 +33,18 @@ router.post("/signup", async (req, res) => {
       return res.status(400).json({ error: "All fields are required" });
     }
 
-    // ✅ Passwords match?
     if (password !== password_confirmation) {
       return res.status(400).json({ error: "Passwords do not match" });
     }
 
-    // ✅ Password strength check
     if (password.length < 6) {
       return res
         .status(400)
         .json({ error: "Password must be at least 6 characters long" });
     }
 
-    // ✅ Hash password before saving
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // ✅ Create user
     const user = await User.create({
       email,
       first_name,
@@ -63,14 +56,12 @@ router.post("/signup", async (req, res) => {
       gender,
     });
 
-    // ✅ Send safe response (don’t return password)
     res.status(201).json({
       message: "User created successfully"
     });
   } catch (err) {
     console.error("❌ Error creating user:", err);
 
-    // ✅ Handle Sequelize unique constraint errors
     if (err.name === "SequelizeUniqueConstraintError") {
       const field = err.errors[0].path;
       let message = "Duplicate value";
@@ -82,7 +73,6 @@ router.post("/signup", async (req, res) => {
       return res.status(400).json({ error: message });
     }
 
-    // ✅ Handle Sequelize validation errors
     if (err.name === "SequelizeValidationError") {
       return res.status(400).json({ error: err.errors[0].message });
     }
@@ -94,18 +84,17 @@ router.post("/signup", async (req, res) => {
 // 📌 Login User
 router.post("/login", async (req, res) => {
   try {
-    const { emailOrUsername, password } = req.body;
+    const { email, password } = req.body;
 
-    if (!emailOrUsername || !password) {
+    if (!email || !password) {
       return res
         .status(400)
         .json({ error: "email/user_name and password are required" });
     }
 
-    // ✅ Find user by email OR user_name
     const user = await User.findOne({
       where: {
-        [Op.or]: [{ email: emailOrUsername }, { user_name: emailOrUsername }],
+        [Op.or]: [{ email: email }, { user_name: email }],
       },
     });
 
@@ -113,13 +102,11 @@ router.post("/login", async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // ✅ Compare password
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
       return res.status(401).json({ error: "Invalid password" });
     }
 
-    // ✅ Generate JWT token
     const token = jwt.sign(
       { id: user.id }, // payload
       "passwordKey", // secret (move to env variable!)
