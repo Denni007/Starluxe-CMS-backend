@@ -1,0 +1,16 @@
+services:
+  - name: starluxe-cms-backend
+    type: web
+    env: node
+    buildCommand: "npm install"
+    startCommand: "npm run dev"
+    envVars:
+      - key: DATABASE_URL
+        value: "./database/database.sqlite"  # Path to SQLite file
+    git:
+      repo: https://github.com/Denni007/Starluxe-CMS-backend.git
+      branch: main
+    regions:
+      - oregon  # Choose your preferred region
+    healthCheckPath: /health  # Optional: if you have a health check endpoint
+    instanceType: free 

@@ -1,13 +1,14 @@
 import express from "express";
 import Industry from "../models/industryModel.js";
+import IsAuth from "../middleware/auth.js";
 
 const router = express.Router();
 
 // 🔹 Get all industries
-router.get("/", async (req, res) => {
+router.get("/", IsAuth, async (req, res) => {
   try {
     const industries = await Industry.findAll({
-      order: [["name", "ASC"]], 
+      order: [["name", "ASC"]],
     });
     res.json(industries);
   } catch (err) {
@@ -16,18 +17,30 @@ router.get("/", async (req, res) => {
 });
 
 // 🔹 Add new industry
-router.post("/", async (req, res) => {
+router.post("/", IsAuth, async (req, res) => {
   try {
-    const { name } = req.body;
-    const industry = await Industry.create({ name });
-    res.status(201).json(industry);
+    const payload = req.body;
+
+    let industries;
+
+    if (Array.isArray(payload)) {
+      // Multiple industries
+      industries = await Industry.bulkCreate(payload, { validate: true });
+    } else {
+      // Single industry
+      industries = await Industry.create(payload);
+    }
+
+    res.status(201).json(industries);
   } catch (err) {
+    console.error("❌ Error creating industries:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
+
 // 🔹 Get industry by ID
-router.get("/:id", async (req, res) => {
+router.get("/:id", IsAuth, async (req, res) => {
   try {
     const industry = await Industry.findByPk(req.params.id);
     if (!industry) {
@@ -40,7 +53,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // 🔹 Update industry
-router.put("/:id", async (req, res) => {
+router.put("/:id", IsAuth, async (req, res) => {
   try {
     const { name } = req.body;
     const industry = await Industry.findByPk(req.params.id);
@@ -59,7 +72,7 @@ router.put("/:id", async (req, res) => {
 });
 
 // 🔹 Delete industry
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", IsAuth, async (req, res) => {
   try {
     const industry = await Industry.findByPk(req.params.id);
 

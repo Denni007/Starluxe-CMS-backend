@@ -1,8 +1,9 @@
 import express from "express";
 import cors from "cors";
 import sequelize from "./database/db.js";   // Sequelize instance
-import industryRouter from "./routers/industryRouter.js";
 import dotenv from "dotenv";
+import industryRouter from "./routers/industryRouter.js";
+import userRouter from "./routers/userRouter.js";
 
 dotenv.config(); // Load .env variables
 
@@ -48,6 +49,7 @@ app.get("/test", (req, res) => {
 });
 
 app.use("/api/industry", industryRouter);
+app.use("/api/user", userRouter);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -65,7 +67,8 @@ app.use((err, req, res, next) => {
     console.log("✅ Database connected");
 
     // Sync tables based on models
-    await sequelize.sync(); // or { alter: true } in dev
+    await sequelize.sync();
+
     console.log("✅ Database synced");
 
     const PORT = process.env.PORT || 4000;
