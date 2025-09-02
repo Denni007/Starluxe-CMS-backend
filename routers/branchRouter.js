@@ -1,93 +1,170 @@
-// routes/businessRoutes.js
 import express from "express";
-import {Business} from "../models/index.js";
-// "../models/index.js";
-import IsAuth from "../middleware/auth.js";
+import Branch from "../models/branchModel.js";
+import Business from "../models/businessModel.js";
+import {isAuth} from "../utill.js";
 
 const router = express.Router();
 
-// 🔹 Get all businesses
-router.get("/", async (req, res) => {
+/**
+ * Helpers
+ */
+function pickBranchFields(body = {}) {
+  return {
+    name: body.name,
+    type: body.type,
+    address_1: body.address_1,
+    address_2: body.address_2 ?? null,
+    city: body.city,
+    state: body.state,
+    country: body.country,
+    pincode: body.pincode,
+    gstin: body.gstin,
+    // Accept either businessId or business_id
+    business_id: body.businessId ?? body.business_id,
+  };
+}
+
+/**
+ * GET /branches
+ * Optional: ?businessId=#
+ */
+
+/**
+ * Nested: POST /businesses/:businessId/branches
+ */
+router.post("/businesses/:businessId/branches", isAuth, async (req, res) => {
   try {
-    const businesses = await Business.findAll({
+
+    const userId = req.user.id;
+    console.log(userId)
+
+    const { businessId } = req.params;
+    const business = await Business.findByPk(businessId);
+    if (!business) return res.status(404).json({ message: "Business not found" });
+
+    const payload = pickBranchFields({ ...req.body, business_id: businessId });
+
+    const branch = await Branch.create({
+      ...payload,
+      created_by: userId,
+      updated_by: userId,
+    });
+
+    res.status(201).json(branch);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get("/", isAuth, async (req, res) => {
+  try {
+    const { businessId } = req.query;
+    const where = businessId ? { business_id: businessId } : {};
+    const branches = await Branch.findAll({
+      where,
       order: [["name", "ASC"]],
     });
-    res.json(businesses);
+    res.json(branches);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 🔹 Add new business
-router.post("/", async (req, res) => {
+/**
+ * POST /branches
+ * Body must include businessId/business_id
+ */
+router.post("/", isAuth, async (req, res) => {
   try {
-    const payload = req.body;
-    let businesses;
+    const userId = req.user.id;
+    const payload = pickBranchFields(req.body);
 
-    if (Array.isArray(payload)) {
-      // Multiple businesses
-      businesses = await Business.bulkCreate(payload, { validate: true });
-    } else {
-      // Single business
-      businesses = await Business.create(payload);
+    if (!payload.business_id) {
+      return res.status(400).json({ message: "businessId is required" });
     }
 
-    res.status(201).json(businesses);
-  } catch (err) {
-    console.error("❌ Error creating businesses:", err.message);
-    res.status(500).json({ error: err.message });
-  }
-});
+    const business = await Business.findByPk(payload.business_id);
+    if (!business) return res.status(404).json({ message: "Business not found" });
 
-// 🔹 Get business by ID
-router.get("/:id", async (req, res) => {
-  try {
-    const business = await Business.findByPk(req.params.id);
-    if (!business) {
-      return res.status(404).json({ message: "Business not found" });
-    }
-    res.json(business);
+    const branch = await Branch.create({
+      ...payload,
+      created_by: userId,
+      updated_by: userId,
+    });
+
+    res.status(201).json(branch);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 🔹 Update business
-router.put("/:id", async (req, res) => {
+/**
+ * Nested: GET /businesses/:businessId/branches
+ */
+router.get("/businesses/:businessId/branches", isAuth, async (req, res) => {
   try {
-    const { name, website, email, contact_number, industry_id, updated_by } = req.body;
-    const business = await Business.findByPk(req.params.id);
-
-    if (!business) {
-      return res.status(404).json({ message: "Business not found" });
-    }
-
-    business.name = name || business.name;
-    business.website = website || business.website;
-    business.email = email || business.email;
-    business.contact_number = contact_number || business.contact_number;
-    business.industry_id = industry_id || business.industry_id;
-    business.updated_by = updated_by || business.updated_by;
-
-    await business.save();
-
-    res.json(business);
+    const { businessId } = req.params;
+    
+    const branches = await Branch.findAll({
+      where: { business_id: businessId },
+      order: [["name", "ASC"]],
+    });
+    res.json(branches);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 🔹 Delete business
-router.delete("/:id", async (req, res) => {
-  try {
-    const business = await Business.findByPk(req.params.id);
 
-    if (!business) {
-      return res.status(404).json({ message: "Business not found" });
+/**
+ * GET /branches/:id
+ */
+router.get("/:id", isAuth, async (req, res) => {
+  try {
+    const branch = await Branch.findByPk(req.params.id);
+    if (!branch) return res.status(404).json({ message: "Branch not found" });
+    res.json(branch);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * PUT /branches/:id
+ */
+router.put("/:id", isAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const branch = await Branch.findByPk(req.params.id);
+    if (!branch) return res.status(404).json({ message: "Branch not found" });
+
+    const updates = pickBranchFields(req.body);
+    // Prevent moving to another business unless explicitly allowed:
+    if (updates.business_id && updates.business_id !== branch.business_id) {
+      // You can decide to block this:
+      // return res.status(400).json({ message: "Cannot change business_id of a branch" });
+      // or allow it; here we allow:
+      branch.business_id = updates.business_id;
     }
 
-    await business.destroy();
-    res.json({ message: "Business deleted successfully" });
+    Object.assign(branch, updates, { updated_by: userId });
+    await branch.save();
+    res.json(branch);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * DELETE /branches/:id
+ */
+router.delete("/:id", isAuth, async (req, res) => {
+  try {
+    const branch = await Branch.findByPk(req.params.id);
+    if (!branch) return res.status(404).json({ message: "Branch not found" });
+
+    await branch.destroy();
+    res.json({ message: "Branch deleted successfully" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -3,6 +3,7 @@ import {User} from "../models/index.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { Op } from "sequelize";
+import { getToken } from "../utill.js";
 
 const router = express.Router();
 
@@ -106,12 +107,7 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid password" });
     }
 
-    const token = jwt.sign(
-      { id: user.id }, 
-      "passwordKey", 
-      { expiresIn: "1h" }
-    );
-
+    const token = getToken(user);
     res.status(200).json({
       message: "Login successful",
       token,

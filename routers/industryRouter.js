@@ -1,11 +1,11 @@
 import express from "express";
 import Industry from "../models/industryModel.js";
-import IsAuth from "../middleware/auth.js";
+import {isAuth} from "../utill.js";
 
 const router = express.Router();
 
 // 🔹 Get all industries
-router.get("/", async (req, res) => {
+router.get("/", isAuth, async (req, res) => {
   try {
     const industries = await Industry.findAll({
       order: [["name", "ASC"]],

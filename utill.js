@@ -8,13 +8,11 @@ const getToken = (user) => {
       
         return jwt.sign(
             {
-              _id: user._id,
-              email: user.email,
-              phoneNumber: user.phoneNumber
+              id: user.id
             },
             config.JWT_SECRET,
             {
-              expiresIn: '2h',
+              expiresIn: '277h',
             }
           );
     } catch (error) {
@@ -44,7 +42,6 @@ const isAuth = (req, res, next) => {
       if (err) {
         return res.status(401).send({ message: 'Invalid Token' });
       }
-
       // Attach decoded user info to the request object
       req.user = decoded;      
 

@@ -213,7 +213,7 @@ import bcrypt from "bcrypt";
 import auth from "../middleware/auth.js";
 import { User } from "../models/index.js";
 import { Op } from "sequelize";
-console.log("hello");
+import {isAuth} from "../utill.js";
 
 const router = Router();
 router.use(auth);
@@ -228,7 +228,20 @@ router.post("/", async (req, res) => {
     res.status(400).json({ error: e.message });
   }
 });
+router.get("/me", isAuth, async (req, res) => {
+  try {
+    console.log("user");
+    const userId = req.user;
 
+    const user = await User.findAll({
+      where: { id: userId },
+      order: [["first_name", "ASC"]]
+    });
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 // CREATE (bulk)
 router.post("/bulk", async (req, res) => {
   try {

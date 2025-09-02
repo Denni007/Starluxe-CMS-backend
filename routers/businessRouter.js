@@ -1,15 +1,47 @@
-// routes/businessRoutes.js
 import express from "express";
+import { Op } from "sequelize";
 import Business from "../models/businessModel.js";
-import IsAuth from "../middleware/auth.js";
+import Branch from "../models/branchModel.js";
+import {isAuth} from "../utill.js";
 
 const router = express.Router();
 
-// 🔹 Get all businesses
-router.get("/", async (req, res) => {
+/**
+ * Helpers
+ */
+function pickBusinessFields(body = {}) {
+  // Accept camelCase from frontend; your Sequelize model can map fields via `field` config
+  return {
+    name: body.name,
+    industry_id: body.industryId ?? body.industry_id,
+    pan: body.pan,
+    website: body.website,
+    primary_email: body.primaryEmail ?? body.primary_email,
+    contact_number: body.primaryContact ?? body.contact_number,
+  };
+}
+
+/**
+ * GET /businesses
+ * Optional query: ?q=<search>
+ */
+router.get("/", isAuth, async (req, res) => {
   try {
+    const { q } = req.query;
+    const where = q
+      ? {
+          [Op.or]: [
+            { name: { [Op.iLike]: `%${q}%` } },
+            { website: { [Op.iLike]: `%${q}%` } },
+            { primary_email: { [Op.iLike]: `%${q}%` } },
+          ],
+        }
+      : {};
+
     const businesses = await Business.findAll({
+      where,
       order: [["name", "ASC"]],
+      include: [{ model: Branch, as: "branches" }],
     });
     res.json(businesses);
   } catch (err) {
@@ -17,73 +49,98 @@ router.get("/", async (req, res) => {
   }
 });
 
-// 🔹 Add new business
-router.post("/", async (req, res) => {
+/**
+ * GET /users/me/businesses
+ */
+router.get("/users/me", isAuth, async (req, res) => {
   try {
-    const payload = req.body;
-    let businesses;
+    const userId = req.user.id;
 
-    if (Array.isArray(payload)) {
-      // Multiple businesses
-      businesses = await Business.bulkCreate(payload, { validate: true });
-    } else {
-      // Single business
-      businesses = await Business.create(payload);
+    const businesses = await Business.findAll({
+      where: { created_by: userId },
+      order: [["name", "ASC"]],
+      include: [{ model: Branch, as: "branches" }],
+    });
+    res.json(businesses);
+  } catch (err) {
+    res.status(500).json({ error: err });
+  }
+});
+
+/**
+ * POST /businesses
+ * Supports single or bulk create
+ */
+router.post("/", isAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    console.log(req.body)
+
+    if (Array.isArray(req.body)) {
+      const payloads = req.body.map((b) => ({
+        ...pickBusinessFields(b),
+        created_by: userId,
+        updated_by: userId,
+      }));
+      const businesses = await Business.bulkCreate(payloads, { validate: true });
+      return res.status(201).json(businesses);
     }
 
-    res.status(201).json(businesses);
+    const payload = {
+      ...pickBusinessFields(req.body),
+      created_by: userId,
+      updated_by: userId,
+    };
+
+    const business = await Business.create(payload);
+    res.status(201).json(business);
   } catch (err) {
     console.error("❌ Error creating businesses:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
-// 🔹 Get business by ID
-router.get("/:id", async (req, res) => {
+/**
+ * GET /businesses/:id
+ */
+router.get("/:id", isAuth, async (req, res) => {
   try {
-    const business = await Business.findByPk(req.params.id);
-    if (!business) {
-      return res.status(404).json({ message: "Business not found" });
-    }
+    const business = await Business.findByPk(req.params.id, {
+      include: [{ model: Branch, as: "branches" }],
+    });
+    if (!business) return res.status(404).json({ message: "Business not found" });
     res.json(business);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 🔹 Update business
-router.put("/:id", async (req, res) => {
+/**
+ * PUT /businesses/:id
+ */
+router.put("/:id", isAuth, async (req, res) => {
   try {
-    const { name, website, email, contact_number, industry_id, updated_by } = req.body;
+    const userId = req.user.id;
     const business = await Business.findByPk(req.params.id);
+    if (!business) return res.status(404).json({ message: "Business not found" });
 
-    if (!business) {
-      return res.status(404).json({ message: "Business not found" });
-    }
-
-    business.name = name || business.name;
-    business.website = website || business.website;
-    business.email = email || business.email;
-    business.contact_number = contact_number || business.contact_number;
-    business.industry_id = industry_id || business.industry_id;
-    business.updated_by = updated_by || business.updated_by;
+    const updates = pickBusinessFields(req.body);
+    Object.assign(business, updates, { updated_by: userId });
 
     await business.save();
-
     res.json(business);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 🔹 Delete business
-router.delete("/:id", async (req, res) => {
+/**
+ * DELETE /businesses/:id
+ */
+router.delete("/:id", isAuth, async (req, res) => {
   try {
     const business = await Business.findByPk(req.params.id);
-
-    if (!business) {
-      return res.status(404).json({ message: "Business not found" });
-    }
+    if (!business) return res.status(404).json({ message: "Business not found" });
 
     await business.destroy();
     res.json({ message: "Business deleted successfully" });

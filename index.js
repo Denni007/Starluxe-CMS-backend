@@ -11,11 +11,11 @@ import permissionRouter from "./routers/permissionRouter.js";
 import assignmentsRoute from "./routers/assignments.js"
 import authRouter from "./routers/authRouter.js";
 
-import runSeeds from "./seeds/seeds.js";
+import seedAdmin from "./seeds/seeds.js";
+// import runSeedDummyFull from "./seedDummyFull.js";
 
 dotenv.config(); // Load .env variables
-runSeeds();
-
+seedAdmin();
 const app = express();
 
 // Define allowed origins (can also move to .env if needed)
@@ -25,7 +25,7 @@ const allowedOrigins = [process.env.CLIENT_URL || "http://localhost:3000"];
 const corsOptions = {
   origin: (origin, callback) => {
     // if (!origin || allowedOrigins.includes(origin)) {
-    if(!origin) {
+    if(!origin || origin) {
       callback(null, true);
     } else {
       const error = new Error("Not allowed by CORS");
@@ -57,6 +57,7 @@ app.use(express.json({ limit: "50mb" })); // no need for body-parser
 app.get("/test", (req, res) => {
   res.send("✅ API is working fine!");
 });
+
 // seedAdmin()
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
@@ -64,9 +65,12 @@ app.use("/api/businesses", businessRouter);
 app.use("/api/branches", branchRouter);
 app.use("/api/roles", roleRouter);
 app.use("/api/permissions", permissionRouter);
+app.use("/api/industry", industryRouter);
+
 app.use("/api/assignments", assignmentsRoute);
 // Error handling middleware
 app.use((err, req, res, next) => {
+  console.log(req.body);
   console.error("❌ Error:", err.stack);
   res.status(500).json({
     message: "A server error has occurred",
