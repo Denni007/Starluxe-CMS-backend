@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import { User, Permission, Industry, Business, Branch } from "../models/index.js";
+import { User, Permission, Industry, Business, Branch ,Role} from "../models/index.js";
 import { PERMISSION_ACTIONS, PERMISSION_MODULES } from "../constants/permissions.js";
 
 // helper delay function
@@ -39,11 +39,23 @@ export default async function seedAdmin() {
       user_name: "sysadmin",
       first_name: "System",
       last_name: "Admin",
-      email: "test@gyopmail.com",
+      email: "test@yopmail.com",
       mobile_number: "9999999999",
       gender: "Other",
       password: await bcrypt.hash("123456", 10),
       is_admin: true,
+      is_email_verify: true,
+    });
+    await sleep(3000); // wait 3s before next insertion
+    await User.create({
+      user_name: "Manager",
+      first_name: "System",
+      last_name: "Manager",
+      email: "test2@yopmail.com",
+      mobile_number: "9999991999",
+      gender: "Male",
+      password: await bcrypt.hash("123456", 10),
+      is_admin: false,
       is_email_verify: true,
     });
     await sleep(3000); // wait 3s before next insertion
@@ -82,7 +94,17 @@ export default async function seedAdmin() {
       created_by: 1,
       updated_by: 1,
     });
-    // await sleep(3000);
+    await sleep(3000);
+    await Role.create({
+        name: "Superadmin",
+        description: "Super Admin role",
+        branch_id: 1,
+        permissions: [1, 2, 3],
+        created_by: 1,
+        updated_by: 1,
+      }
+    );
+    await sleep(3000);
   }
 
   // ensure all Permission rows exist (cartesian of modules x actions)

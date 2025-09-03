@@ -1,5 +1,5 @@
 import express from "express";
-import {User} from "../models/index.js";
+import {Branch, Business, Role, User, UserBusinessRole} from "../models/index.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { Op } from "sequelize";
@@ -81,6 +81,7 @@ router.post("/signup", async (req, res) => {
   }
 });
 
+
 // 📌 Login User
 router.post("/login", async (req, res) => {
   try {
@@ -92,6 +93,7 @@ router.post("/login", async (req, res) => {
         .json({ error: "email/username and password are required" });
     }
 
+    // 🔎 find user by email or username
     const user = await User.findOne({
       where: {
         [Op.or]: [{ email: email }, { user_name: email }],
@@ -102,21 +104,55 @@ router.post("/login", async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
+    // 🔑 validate password
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
       return res.status(401).json({ error: "Invalid password" });
     }
 
+    // 🔎 fetch memberships (business, branch, role)
+    const memberships = await UserBusinessRole.findAll({
+      where: { user_id: user.id },
+      include: [
+        { model: Role, as: "role", attributes: ["id", "name"] },
+        { model: Business, as: "business", attributes: ["id", "name"] },
+        { model: Branch, as: "branch", attributes: ["id", "name", "type", "city"] },
+      ],
+    });
+
+    // 🔎 check admin (by slug = "admin")
+    // const isAdmin = memberships.some(m => m.role?.slug === "admin");
+
+    // 🔑 generate JWT
     const token = getToken(user);
+
+    // 📤 response
     res.status(200).json({
       message: "Login successful",
       token,
-      user: { id: user.id, email: user.email, user_name: user.user_name, first_name: user.first_name, last_name: user.last_name, mobile_number: user.mobile_number}
+      user: {
+        id: user.id,
+        email: user.email,
+        user_name: user.user_name,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        mobile_number: user.mobile_number,
+        is_admin:user.is_admin,
+        memberships: memberships.map(m => ({
+          businessId: m.business_id,
+          businessName: m.business?.name,
+          branchId: m.branch_id,
+          branchName: m.branch?.name,
+          roleId: m.role_id,
+          roleName: m.role?.name,
+        })),
+      },
     });
   } catch (err) {
     console.error("❌ Login error:", err.message);
     res.status(500).json({ error: "Server error" });
   }
 });
+
 
 export default router;

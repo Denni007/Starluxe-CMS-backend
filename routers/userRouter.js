@@ -211,7 +211,7 @@
 import { Router } from "express";
 import bcrypt from "bcrypt";
 import auth from "../middleware/auth.js";
-import { User } from "../models/index.js";
+import { Branch, Business, Permission, Role, User, UserBusinessRole } from "../models/index.js";
 import { Op } from "sequelize";
 import {isAuth} from "../middleware/utill.js";
 
@@ -227,19 +227,78 @@ router.post("/", async (req, res) => {
     res.status(400).json({ error: e.message });
   }
 });
+
+
+// GET /api/user/me
 router.get("/me", isAuth, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const user = await User.findAll({
-      where: { id: userId },
-      order: [["first_name", "ASC"]]
+    const user = await User.findByPk(userId, {
+      attributes: ["id", "user_name", "first_name", "last_name", "email", "mobile_number"],
     });
-    res.json(user);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // fetch memberships from join table
+    const memberships = await UserBusinessRole.findAll({
+      where: { user_id: userId },
+      include: [
+        { model: Business, as: "business", attributes: ["id", "name", "industry_id"] },
+        { model: Branch, as: "branch", attributes: ["id", "name", "type", "city"] },
+        { 
+          model: Role, 
+          as: "role",
+          attributes: ["id", "name", "description"],
+          include: [
+            { 
+              model: Permission, 
+              as: "permissions",
+              attributes: ["id", "module", "action"], 
+              through: { attributes: [] } 
+            }
+          ]
+        }
+      ]
+    });
+
+    // format memberships
+    const membershipArr = memberships.map(m => ({
+      businessId: m.business?.id,
+      branchId: m.branch?.id,
+      roleId: m.role?.id,
+      roleName: m.role?.name,
+      permissions: m.role?.permissions?.map(p => ({
+        module: p.module,
+        action: p.action
+      })) || []
+    }));
+
+    // final response
+    const response = {
+      id: user.id,
+      userName: user.user_name,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      name: `${user.first_name} ${user.last_name}`,
+      email: user.email,
+      mobileNumber: user.mobile_number,
+      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(
+        user.first_name + " " + user.last_name
+      )}&background=random`,
+      memberships: membershipArr
+    };
+
+    res.json(response);
   } catch (err) {
+    console.error("❌ Error fetching user/me:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
+
+
 // CREATE (bulk)
 router.post("/bulk", async (req, res) => {
   try {

@@ -3,14 +3,20 @@ import express from "express";
 import Role from "../models/roleModel.js";
 import Branch from "../models/branchModel.js";
 import { isAuth } from "../middleware/utill.js";
+import User from "../models/userModel.js";
 
 const router = express.Router();
 
 // 🔹 Get all roles with branch info
 router.get("/", isAuth, async (req, res) => {
   try {
+    const userId = req.user.id;
+    console.log(req.body)
     const roles = await Role.findAll({
-      include: [{ model: Branch, attributes: ["id", "name", "type", "city"] }],
+      include: [{ model: Branch, 
+        as: "branch", 
+        
+        attributes: ["id", "name", "type", "city"] }],
       order: [["name", "ASC"]],
     });
     res.json(roles);
@@ -19,26 +25,46 @@ router.get("/", isAuth, async (req, res) => {
   }
 });
 
-// 🔹 Create role(s) (with branch_id + created_by + updated_by)
+// 🔹 Create role(s) (with branch_id)
+// 🔹 Create role(s) (with branch_id, created_by, updated_by)
 router.post("/", isAuth, async (req, res) => {
   try {
     const userId = req.user.id;
     const payload = req.body;
+
+    // Ensure the logged-in user exists
+    const userExists = await User.findByPk(userId);
+    if (!userExists) {
+      return res.status(400).json({ error: "Invalid user (created_by not found)" });
+    }
+
     let roles;
-    console.log( req.body)
 
     if (Array.isArray(payload)) {
-      // Multiple roles
-      roles = await Role.bulkCreate(
-        payload.map((p) => ({
-          ...p,
-          created_by: userId,
-          updated_by: userId,
-        })),
-        { validate: true }
-      );
+      // ✅ Multiple roles
+      for (const role of payload) {
+        const branchExists = await Branch.findByPk(role.branch_id);
+        if (!branchExists) {
+          return res.status(400).json({ error: `Branch ${role.branch_id} not found` });
+        }
+      }
+
+      const updatedPayload = payload.map((role) => ({
+        ...role,
+        created_by: userId,
+        updated_by: userId,
+      }));
+
+      roles = await Role.bulkCreate(updatedPayload, { validate: true });
     } else {
-      // Single role
+      // ✅ Single role
+      if (payload.branch_id) {
+        const branchExists = await Branch.findByPk(payload.branch_id);
+        if (!branchExists) {
+          return res.status(400).json({ error: `Branch ${payload.branch_id} not found` });
+        }
+      }
+
       roles = await Role.create({
         ...payload,
         created_by: userId,
@@ -53,8 +79,9 @@ router.post("/", isAuth, async (req, res) => {
   }
 });
 
+
 // 🔹 Get role by ID (with branch)
-router.get("/:id", isAuth, async (req, res) => {
+router.get("/:id", isAuth,async (req, res) => {
   try {
     const role = await Role.findByPk(req.params.id, {
       include: [{ model: Branch, attributes: ["id", "name", "type", "city"] }],
@@ -70,11 +97,10 @@ router.get("/:id", isAuth, async (req, res) => {
   }
 });
 
-// 🔹 Update role (set updated_by from logged-in user)
-router.put("/:id", isAuth, async (req, res) => {
+// 🔹 Update role
+router.put("/:id", isAuth,async (req, res) => {
   try {
-    const { name, description, branch_id } = req.body;
-    const userId = req.user.id;
+    const { name, description, branch_id, updated_by } = req.body;
     const role = await Role.findByPk(req.params.id);
 
     if (!role) {
@@ -83,8 +109,8 @@ router.put("/:id", isAuth, async (req, res) => {
 
     role.name = name || role.name;
     role.description = description || role.description;
-    role.branch_id = branch_id || role.branch_id;
-    role.updated_by = userId; // logged-in user is updating
+    role.branch_id = branch_id || role.branch_id; // link to branch
+    role.updated_by = updated_by || role.updated_by;
 
     await role.save();
 
@@ -95,7 +121,7 @@ router.put("/:id", isAuth, async (req, res) => {
 });
 
 // 🔹 Delete role
-router.delete("/:id", isAuth, async (req, res) => {
+router.delete("/:id", isAuth,async (req, res) => {
   try {
     const role = await Role.findByPk(req.params.id);
 
