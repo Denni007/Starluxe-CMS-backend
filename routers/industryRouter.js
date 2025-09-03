@@ -1,6 +1,6 @@
 import express from "express";
 import Industry from "../models/industryModel.js";
-import {isAuth} from "../utill.js";
+import {isAuth} from "../middleware/utill.js";
 
 const router = express.Router();
 

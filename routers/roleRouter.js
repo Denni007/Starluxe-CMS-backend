@@ -1,93 +1,110 @@
-// routes/businessRoutes.js
+// routes/roleRoutes.js
 import express from "express";
 import Role from "../models/roleModel.js";
-import IsAuth from "../middleware/auth.js";
 import Branch from "../models/branchModel.js";
+import { isAuth } from "../middleware/utill.js";
 
 const router = express.Router();
 
-// 🔹 Get all businesses
-router.get("/", async (req, res) => {
+// 🔹 Get all roles with branch info
+router.get("/", isAuth, async (req, res) => {
   try {
-    const Branches = await Role.findAll({
+    const roles = await Role.findAll({
+      include: [{ model: Branch, attributes: ["id", "name", "type", "city"] }],
       order: [["name", "ASC"]],
     });
-    res.json(Branches);
+    res.json(roles);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 🔹 Add new business
-router.post("/", async (req, res) => {
+// 🔹 Create role(s) (with branch_id + created_by + updated_by)
+router.post("/", isAuth, async (req, res) => {
   try {
+    const userId = req.user.id;
     const payload = req.body;
-    let branches;
+    let roles;
+    console.log( req.body)
 
     if (Array.isArray(payload)) {
-      // Multiple businesses
-      branches = await Role.bulkCreate(payload, { validate: true });
+      // Multiple roles
+      roles = await Role.bulkCreate(
+        payload.map((p) => ({
+          ...p,
+          created_by: userId,
+          updated_by: userId,
+        })),
+        { validate: true }
+      );
     } else {
-      // Single business
-      businesses = await Branch.create(payload);
+      // Single role
+      roles = await Role.create({
+        ...payload,
+        created_by: userId,
+        updated_by: userId,
+      });
     }
 
-    res.status(201).json(businesses);
+    res.status(201).json(roles);
   } catch (err) {
-    console.error("❌ Error creating businesses:", err.message);
+    console.error("❌ Error creating roles:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
-// 🔹 Get business by ID
-router.get("/:id", async (req, res) => {
+// 🔹 Get role by ID (with branch)
+router.get("/:id", isAuth, async (req, res) => {
   try {
-    const business = await Branch.findByPk(req.params.id);
-    if (!business) {
-      return res.status(404).json({ message: "Business not found" });
-    }
-    res.json(business);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+    const role = await Role.findByPk(req.params.id, {
+      include: [{ model: Branch, attributes: ["id", "name", "type", "city"] }],
+    });
 
-// 🔹 Update business
-router.put("/:id", async (req, res) => {
-  try {
-    const { name, website, email, contact_number, industry_id, updated_by } = req.body;
-    const business = await Role.findByPk(req.params.id);
-
-    if (!business) {
-      return res.status(404).json({ message: "Business not found" });
+    if (!role) {
+      return res.status(404).json({ message: "Role not found" });
     }
 
-    business.name = name || business.name;
-    business.website = website || business.website;
-    business.email = email || business.email;
-    business.contact_number = contact_number || business.contact_number;
-    business.industry_id = industry_id || business.industry_id;
-    business.updated_by = updated_by || business.updated_by;
-
-    await business.save();
-
-    res.json(business);
+    res.json(role);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 🔹 Delete business
-router.delete("/:id", async (req, res) => {
+// 🔹 Update role (set updated_by from logged-in user)
+router.put("/:id", isAuth, async (req, res) => {
   try {
-    const business = await Business.findByPk(req.params.id);
+    const { name, description, branch_id } = req.body;
+    const userId = req.user.id;
+    const role = await Role.findByPk(req.params.id);
 
-    if (!business) {
-      return res.status(404).json({ message: "Business not found" });
+    if (!role) {
+      return res.status(404).json({ message: "Role not found" });
     }
 
-    await business.destroy();
-    res.json({ message: "Business deleted successfully" });
+    role.name = name || role.name;
+    role.description = description || role.description;
+    role.branch_id = branch_id || role.branch_id;
+    role.updated_by = userId; // logged-in user is updating
+
+    await role.save();
+
+    res.json(role);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 🔹 Delete role
+router.delete("/:id", isAuth, async (req, res) => {
+  try {
+    const role = await Role.findByPk(req.params.id);
+
+    if (!role) {
+      return res.status(404).json({ message: "Role not found" });
+    }
+
+    await role.destroy();
+    res.json({ message: "Role deleted successfully" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

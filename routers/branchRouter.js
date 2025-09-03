@@ -1,7 +1,7 @@
 import express from "express";
 import Branch from "../models/branchModel.js";
 import Business from "../models/businessModel.js";
-import {isAuth} from "../utill.js";
+import {isAuth} from "../middleware/utill.js";
 
 const router = express.Router();
 

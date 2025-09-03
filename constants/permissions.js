@@ -2,7 +2,7 @@ export const PERMISSION_ACTIONS = ['access', 'create', 'read', 'update', 'delete
 
 export const PERMISSION_MODULES = [
   'Leads', 'Opportunities', 'Items', 'Quotations', 'Contacts', 'Tasks',
-  'Reminders', 'Employee', 'Reports', 'Settings', 'Business & Branches'
+  'Reminders', 'Employee', 'Reports', 'Settings', 'Business', 'Branches'
 ];
 
 export const ACTION_LABEL = {

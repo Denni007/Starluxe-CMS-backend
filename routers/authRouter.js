@@ -3,7 +3,7 @@ import {User} from "../models/index.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { Op } from "sequelize";
-import { getToken } from "../utill.js";
+import { getToken } from "../middleware/utill.js";
 
 const router = express.Router();
 

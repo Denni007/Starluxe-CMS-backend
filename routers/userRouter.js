@@ -213,7 +213,7 @@ import bcrypt from "bcrypt";
 import auth from "../middleware/auth.js";
 import { User } from "../models/index.js";
 import { Op } from "sequelize";
-import {isAuth} from "../utill.js";
+import {isAuth} from "../middleware/utill.js";
 
 const router = Router();
 // CREATE (single)
