@@ -60,7 +60,7 @@ app.get("/test", (req, res) => {
 
 // seedAdmin()
 app.use("/api/auth", authRouter);
-app.use("/api/user", userRouter);
+app.use("/api/users", userRouter);
 app.use("/api/businesses", businessRouter);
 app.use("/api/branches", branchRouter);
 app.use("/api/roles", roleRouter);

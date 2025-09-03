@@ -1,17 +1,18 @@
 // routes/businessRoutes.js
 import express from "express";
-import Business from "../models/businessModel.js";
+import Role from "../models/roleModel.js";
 import IsAuth from "../middleware/auth.js";
+import Branch from "../models/branchModel.js";
 
 const router = express.Router();
 
 // 🔹 Get all businesses
 router.get("/", async (req, res) => {
   try {
-    const businesses = await Business.findAll({
+    const Branches = await Role.findAll({
       order: [["name", "ASC"]],
     });
-    res.json(businesses);
+    res.json(Branches);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -21,14 +22,14 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   try {
     const payload = req.body;
-    let businesses;
+    let branches;
 
     if (Array.isArray(payload)) {
       // Multiple businesses
-      businesses = await Business.bulkCreate(payload, { validate: true });
+      branches = await Role.bulkCreate(payload, { validate: true });
     } else {
       // Single business
-      businesses = await Business.create(payload);
+      businesses = await Branch.create(payload);
     }
 
     res.status(201).json(businesses);
@@ -41,7 +42,7 @@ router.post("/", async (req, res) => {
 // 🔹 Get business by ID
 router.get("/:id", async (req, res) => {
   try {
-    const business = await Business.findByPk(req.params.id);
+    const business = await Branch.findByPk(req.params.id);
     if (!business) {
       return res.status(404).json({ message: "Business not found" });
     }
@@ -55,7 +56,7 @@ router.get("/:id", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     const { name, website, email, contact_number, industry_id, updated_by } = req.body;
-    const business = await Business.findByPk(req.params.id);
+    const business = await Role.findByPk(req.params.id);
 
     if (!business) {
       return res.status(404).json({ message: "Business not found" });

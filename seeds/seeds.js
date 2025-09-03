@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import { User, Permission ,Industry, Business} from "../models/index.js";
+import { User, Permission ,Industry, Business, Branch} from "../models/index.js";
 import { PERMISSION_ACTIONS, PERMISSION_MODULES } from "../constants/permissions.js";
 
 export default async function seedAdmin() {
@@ -31,12 +31,37 @@ export default async function seedAdmin() {
       is_email_verify: true,
     });
   }
-    for (const name of INDUSTRY_LIST) {
-      await Industry.findOrCreate({
-        where: { name },
-        defaults: { name },
-      });
-    }
+  for (const name of INDUSTRY_LIST) {
+    await Industry.findOrCreate({
+      where: { name },
+      defaults: { name },
+    });
+  }
+  const user = 1;
+  const found = await User.findOne({ where: { id : user  } });
+  if (found) {
+    await Business.create({
+        name: "Acme Corp",
+        industry_id: 1,
+        contact_number: "1112223333",
+        created_by:found.id,
+        updated_by:found.id
+    });
+    await Branch.create({
+      type: "OFFICE",
+        name: "HQ",
+        address_1: "123 Street",
+        city: "Mumbai",
+        state: "MH",
+        country: "IN",
+        pincode: "400001",
+        business_id: 1,
+        created_by: 1,
+        updated_by: 1,
+    
+    })
+  }
+ 
   // ensure all Permission rows exist (cartesian of modules x actions)
   for (const m of PERMISSION_MODULES) {
     for (const a of PERMISSION_ACTIONS) {

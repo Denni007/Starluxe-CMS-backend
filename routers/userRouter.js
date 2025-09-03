@@ -216,7 +216,6 @@ import { Op } from "sequelize";
 import {isAuth} from "../utill.js";
 
 const router = Router();
-router.use(auth);
 // CREATE (single)
 router.post("/", async (req, res) => {
   try {
@@ -230,8 +229,7 @@ router.post("/", async (req, res) => {
 });
 router.get("/me", isAuth, async (req, res) => {
   try {
-    console.log("user");
-    const userId = req.user;
+    const userId = req.user.id;
 
     const user = await User.findAll({
       where: { id: userId },
