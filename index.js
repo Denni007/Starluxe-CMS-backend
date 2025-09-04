@@ -10,7 +10,6 @@ import roleRouter from "./routers/roleRouter.js";
 import permissionRouter from "./routers/permissionRouter.js";
 import assignmentsRoute from "./routers/assignments.js"
 import authRouter from "./routers/authRouter.js";
-
 import seedAdmin from "./seeds/seeds.js";
 // import runSeedDummyFull from "./seedDummyFull.js";
 
@@ -66,7 +65,6 @@ app.use("/api/branches", branchRouter);
 app.use("/api/roles", roleRouter);
 app.use("/api/permissions", permissionRouter);
 app.use("/api/industry", industryRouter);
-
 app.use("/api/assignments", assignmentsRoute);
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 import { User, Permission, Industry, Business, Branch ,Role} from "../models/index.js";
-import { PERMISSION_ACTIONS, PERMISSION_MODULES } from "../constants/permissions.js";
+import { PERMISSION_ACTIONS, PERMISSION_MODULES } from "../constants/constant.js";
 
 // helper delay function
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));

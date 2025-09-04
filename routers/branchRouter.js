@@ -32,7 +32,7 @@ function pickBranchFields(body = {}) {
 /**
  * Nested: POST /businesses/:businessId/branches
  */
-router.post("/businesses/:businessId/branches", isAuth, async (req, res) => {
+router.post("/businesses/:businessId", isAuth, async (req, res) => {
   try {
 
     const userId = req.user.id;
