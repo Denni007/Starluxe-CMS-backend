@@ -5,7 +5,7 @@ const AuthCtrl = require("../controller/auth.js");
 const router = express.Router();
 
 // Authentication
-router.post("/auth/signup", AuthCtrl.signup);
-router.post("/auth/login", AuthCtrl.login);
+router.post("/signup", AuthCtrl.signup);
+router.post("/login", AuthCtrl.login);
 
 module.exports = router;

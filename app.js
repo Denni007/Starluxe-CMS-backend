@@ -1,10 +1,10 @@
+// app.js
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
-const { initDB, dbPath } = require("./app/config/index.js");
-const routes = require("./app/routers/index.js");
-const seedAdmin = require("./app/seeds/seeds.js");
+const sequelize = require("./app/config"); // the instance
+const routes = require("./app/route");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -14,24 +14,52 @@ app.use(cors());
 app.use(express.json({ limit: "50mb" }));
 
 // Health check
-app.get("/test", (req, res) => {
-  res.send(`✅ API working, DB at ${dbPath}`);
-});
-
-// Routes
+app.get("/test", (_req, res) => res.send("✅ API working"));
 app.use("/api", routes);
 
 // Error handler
-app.use((err, req, res, next) => {
+app.use((err, _req, res, _next) => {
   console.error("❌ Error:", err.stack);
   res.status(500).json({ message: "Server error", error: err.message });
 });
 
-// Boot
+// 🚀 Boot here (not in config/index.js)
 (async () => {
+  // In your boot block (where you currently do sequelize.sync)
+  // try {
+  //   await sequelize.authenticate();
+  //   // optional: see generated SQL while debugging
+  //   sequelize.options.logging = console.log;
+
+  //   const models = sequelize.models;
+  //   for (const [name, model] of Object.entries(models)) {
+  //     try {
+  //       console.log(`⏳ syncing model: ${name}`);
+  //       await model.sync({ alter: true });
+  //       console.log(`✅ synced: ${name}`);
+  //     } catch (e) {
+  //       console.error(`❌ sync failed for model: ${name}`);
+  //       if (e && e.errors) {
+  //         for (const ve of e.errors) {
+  //           console.error(`  • path: ${ve.path} | message: ${ve.message} | value: ${ve.value}`);
+  //         }
+  //       } else {
+  //         console.error(e);
+  //       }
+  //       throw e; // stop boot once we know the offender
+  //     }
+  //   }
+
+  //   console.log("✅ all models synced");
+  //   // ... app.listen() here
+  // } catch (err) {
+  //   console.error("❌ Startup Error:", err.message);
+  //   process.exit(1);
+  // }
+
   try {
-    await initDB("alter"); // "alter" | "force" | "none"
-    await seedAdmin();
+    await sequelize.authenticate();
+    await sequelize.sync({ alter: true });
 
     app.listen(PORT, () =>
       console.log(`🚀 Server running at http://localhost:${PORT}`)

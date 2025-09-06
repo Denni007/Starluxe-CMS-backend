@@ -1,9 +1,9 @@
 // app/controller/role.controller.js
 // CommonJS + unified responses { status: "true"/"false", ... }
 
-const Role = require("../models/roleModel");
-const Branch = require("../models/branchModel");
-const User = require("../models/userModel");
+const Role = require("../models/role.js");
+const Branch = require("../models/branch.js");
+const User = require("../models/user.js");
 
 /**
  * GET /roles

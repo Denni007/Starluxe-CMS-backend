@@ -1,5 +1,7 @@
 const jwt = require("jsonwebtoken");
-const config = require("../../config");
+require("dotenv").config();
+
+const JWT_SECRET = process.env.JWT_SECRET
 
 // Generate JWT
 const getToken = (user) => {
@@ -10,7 +12,7 @@ const getToken = (user) => {
         isAdmin: user.is_admin || false,
         isSeller: user.is_seller || false,
       },
-      config.JWT_SECRET,
+      JWT_SECRET,
       {
         expiresIn: "277h",
       }
@@ -33,7 +35,7 @@ const isAuth = (req, res, next) => {
 
     const token = authHeader.slice(7); // remove "Bearer "
 
-    jwt.verify(token, config.JWT_SECRET, (err, decoded) => {
+    jwt.verify(token, JWT_SECRET, (err, decoded) => {
       if (err) {
         return res.status(401).send({ message: "Invalid Token" });
       }

@@ -1,11 +1,11 @@
 const sequelize = require("../config/index");
-const User = require("./userModel");
+const User = require("./user");
 const Business = require("./business");
 const Branch = require("./branch");
 const Permission = require("./permission");
 const RolePermission = require("./RolePermission");
 const UserBusinessRole = require("./UserBusiness");
-const Role = require("./roleModel");
+const Role = require("./role");
 const Industry = require("./industry");
 
 // -----------------------------

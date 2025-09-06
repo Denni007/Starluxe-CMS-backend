@@ -1,25 +1,10 @@
-export const PAYMENT_TYPE = {
+exports.PAYMENT_TYPE = {
     ADVANCE: "advance",
     PAYMENT: "payment",
     FINAL_PAYMENT: "final payment"
 }
-export const PERMISSION_ACTIONS = ['access', 'create', 'read', 'update', 'delete'];
 
-export const PERMISSION_MODULES = [
-  'Leads', 'Opportunities', 'Items', 'Quotations', 'Contacts', 'Tasks',
-  'Reminders', 'Employee', 'Reports', 'Settings', 'Business', 'Branches'
-];
-
-export const ACTION_LABEL = {
-  access: 'Access',
-  create: 'Create',
-  read: 'Read',
-  update: 'Update',
-  delete: 'Delete',
-};
-
-
-export const ROLE = {
+exports.ROLE = {
     SUPER_ADMIN: "Super Admin",
     ADMIN: "Admin",
     ACCOUNT: "Account",
@@ -28,12 +13,12 @@ export const ROLE = {
     OTHER: "Other",
 }
 
-export const SALARY_PAYMENT_TYPE = {
+exports.SALARY_PAYMENT_TYPE = {
     CASH: "cash",
     BANK: "bank"
 }
 
-export const ACCOUNT_GROUPS_TYPE = {
+exports.ACCOUNT_GROUPS_TYPE = {
     BANK_ACCOUNT: "Bank Account",
     DUTIES_AND_TAXES: "Duties & Taxes",
     EXPENSE_DIRECT: "Expenses (Direct)",
@@ -51,37 +36,37 @@ export const ACCOUNT_GROUPS_TYPE = {
     SALARY: "Salary",
 }
 
-export const MACHINE_SCHEDULE_TYPE = {
+exports.MACHINE_SCHEDULE_TYPE = {
     REGULAR: "Regular",
     PREVENTIVE: "Preventive",
     BREAKDOWN: "Breakdown"
 }
 
-export const MACHINE_SCHEDULE_FREQUENCY= {
+exports.MACHINE_SCHEDULE_FREQUENCY= {
     DAILY: "Daily",
     WEEKLY: "Weekly",
     MONTHLY: "Monthly"
 }
 
-export const REGISTRATION_TYPE = {
+exports.REGISTRATION_TYPE = {
     COMPOSITION: "Composition",
     REGULAR: "Regular",
     UNREGISTERED: "Unregistered",
 }
 
-export const TRANSACTION_TYPE = {
+exports.TRANSACTION_TYPE = {
     BANK: "Bank",
     CASH: "Cash"
 }
 
-export const MAINTENCE_TYPE = {
+exports.MAINTENCE_TYPE = {
     OILING: "oiling",
     GREASING: "greasing",
     CLEANING: "cleaning",
     PAINTING: "painting"
 }
 
-export const WORKER_SHIFT = {
+exports.WORKER_SHIFT = {
     DAY: "Day",
     NIGHT: "Night"
 }

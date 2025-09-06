@@ -1,7 +1,7 @@
 // app/routes/role.routes.js
 const express = require("express");
 const { isAuth } = require("../middleware/utill");
-const RoleCtrl = require("../controller/role.controller");
+const RoleCtrl = require("../controller/role.js");
 
 const router = express.Router();
 
