@@ -59,7 +59,7 @@ exports.create = async (req, res) => {
     if (!payload.business_id) {
       return res.status(400).json({ status: "false", message: "businessId is required" });
     }
-
+    
     const business = await Business.findByPk(payload.business_id);
     if (!business) return res.status(404).json({ status: "false", message: "Business not found" });
 

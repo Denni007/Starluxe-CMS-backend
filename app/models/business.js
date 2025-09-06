@@ -11,7 +11,7 @@ const Business = sequelize.define("Business", {
   contact_number: { type: DataTypes.STRING, allowNull: false },
   industry_id: { type: DataTypes.INTEGER, allowNull: false },
   created_by: { type: DataTypes.INTEGER, allowNull: false },
-  updated_by: { type: DataTypes.INTEGER, allowNull: false },
+  updated_by: { type: DataTypes.INTEGER, allowNull: false },  
 }, {
   tableName: "businesses",
   timestamps: true,

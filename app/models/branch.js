@@ -14,7 +14,6 @@ const Branch = sequelize.define("Branch", {
   },
 
   address_1: { type: DataTypes.STRING, allowNull: false },
-  address_2: { type: DataTypes.STRING, allowNull: true },
   landmark:  { type: DataTypes.STRING, allowNull: true },
   city:   { type: DataTypes.STRING, allowNull: false },
   state:  { type: DataTypes.STRING, allowNull: false },
@@ -22,7 +21,6 @@ const Branch = sequelize.define("Branch", {
   pincode:{ type: DataTypes.STRING, allowNull: false },
 
   business_id: { type: DataTypes.INTEGER, allowNull: false },
-
   created_by: { type: DataTypes.INTEGER, allowNull: false },
   updated_by: { type: DataTypes.INTEGER, allowNull: false },
 }, {

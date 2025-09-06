@@ -10,7 +10,7 @@ const Permission = sequelize.define("Permission", {
   tableName: "permissions",
   timestamps: false,
   indexes: [
-    { unique: true, fields: ["module", "action"] } // 👈 important
+    { unique: true, fields: ["module", "action"] }
   ]
 });
 

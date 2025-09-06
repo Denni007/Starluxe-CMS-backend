@@ -25,7 +25,8 @@ app.use((err, _req, res, _next) => {
 
 // 🚀 Boot here (not in config/index.js)
 (async () => {
-  // In your boot block (where you currently do sequelize.sync)
+
+
   // try {
   //   await sequelize.authenticate();
   //   // optional: see generated SQL while debugging
@@ -57,9 +58,17 @@ app.use((err, _req, res, _next) => {
   //   process.exit(1);
   // }
 
+
+  
   try {
     await sequelize.authenticate();
     await sequelize.sync({ alter: true });
+
+    // await sequelize.models.Business.sync({ alter: true });
+    // await sequelize.models.User.sync({ alter: true });
+    // await sequelize.models.Branch.sync({ alter: true });
+    // await sequelize.models.Role.sync({ alter: true });
+    // await sequelize.models.Industry.sync({ alter: true });
 
     app.listen(PORT, () =>
       console.log(`🚀 Server running at http://localhost:${PORT}`)
@@ -68,6 +77,7 @@ app.use((err, _req, res, _next) => {
     console.error("❌ Startup Error:", err.message);
     process.exit(1);
   }
+
 })();
 
 module.exports = app;

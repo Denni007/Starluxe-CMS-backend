@@ -5,10 +5,10 @@ const IndustryCtrl = require("../controller/industry.js");
 
 const router = express.Router();
 
-router.get("/industries", IndustryCtrl.list);
-router.get("/industries/:id", IndustryCtrl.get);
-router.post("/industries", IndustryCtrl.create);
-router.put("/industries/:id", IndustryCtrl.update);
-router.delete("/industries/:id", IndustryCtrl.remove);
+router.post("/", IndustryCtrl.create);
+router.get("/", IndustryCtrl.list);
+router.get("/:id", IndustryCtrl.get);
+router.put("/:id", IndustryCtrl.update);
+router.delete("/:id", IndustryCtrl.remove);
 
 module.exports = router;

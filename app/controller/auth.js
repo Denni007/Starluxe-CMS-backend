@@ -1,6 +1,6 @@
 const bcrypt = require("bcrypt");
 const { Op } = require("sequelize");
-const { Branch, Business, Role, User, UserBusinessRole } = require("../models");
+const { Branch, Business, Role, User, Permission, UserBranchRole} = require("../models");
 const { getToken } = require("../middleware/utill");
 
 // POST /signup
@@ -78,43 +78,87 @@ exports.signup = async (req, res) => {
 // POST /login
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body; // `email` can be email or username
+    let { email, password } = req.body; // "email" can be username too
 
     if (!email || !password) {
-      return res
-        .status(400)
-        .json({ status: "false", message: "email/username and password are required" });
+      return res.status(400).json({
+        status: "false",
+        message: "email/username and password are required",
+      });
     }
 
-    // find user by email OR username
-    const user = await User.findOne({
-      where: {
-        [Op.or]: [{ email }, { user_name: email }],
-      },
-    });
+    // Normalize: treat as email if it looks like one; otherwise as username
+    const looksLikeEmail = /\S+@\S+\.\S+/.test(email);
+    const whereClause = looksLikeEmail
+      ? { email: email.trim().toLowerCase() }
+      : { user_name: email.trim() };
+
+    const user = await User.findOne({ where: whereClause });
 
     if (!user) {
       return res.status(404).json({ status: "false", message: "User not found" });
     }
 
-    // validate password
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
       return res.status(401).json({ status: "false", message: "Invalid password" });
     }
 
-    // fetch memberships (business, branch, role)
-    const memberships = await UserBusinessRole.findAll({
+    // Pull memberships: user ↔ branch ↔ role (+ branch → business)
+    const memberships = await UserBranchRole.findAll({
       where: { user_id: user.id },
       include: [
-        { model: Role, as: "role", attributes: ["id", "name"] },
-        { model: Business, as: "business", attributes: ["id", "name"] },
-        { model: Branch, as: "branch", attributes: ["id", "name", "type", "city"] },
+        {
+          model: Role,
+          as: "role",
+          attributes: ["id", "name"],
+          include: [{ model: Permission, as: "permissions", attributes: ["module", "action"] }],
+        },
+        {
+          model: Branch,
+          as: "branch",
+          attributes: ["id", "name", "type", "city", "business_id"],
+          include: [{ model: Business, as: "business", attributes: ["id", "name"] }],
+        },
       ],
+      order: [["id", "ASC"]],
     });
 
-    // generate JWT
-    const token = getToken(user);
+    // Build branch-scoped memberships and effective permissions
+    const membershipPayload = memberships.map((m) => {
+      const businessId = m.branch?.business?.id ?? m.branch?.business_id ?? null;
+      const businessName = m.branch?.business?.name ?? null;
+      const rolePerms = (m.role?.permissions || []).map((p) => `${p.module}:${p.action}`);
+      return {
+        businessId,
+        businessName,
+        branchId: m.branch?.id ?? m.branch_id,
+        branchName: m.branch?.name ?? null,
+        roleId: m.role?.id ?? m.role_id,
+        roleName: m.role?.name ?? null,
+        permissions: Array.from(new Set(rolePerms)), // unique list for the role
+        isPrimary: !!m.is_primary,
+      };
+    });
+
+    // Optionally, group permissions per branch for quicker frontend gating
+    const permissionsByBranch = {};
+    for (const m of membershipPayload) {
+      const bId = m.branchId;
+      if (!bId) continue;
+      if (!permissionsByBranch[bId]) permissionsByBranch[bId] = new Set();
+      for (const code of m.permissions) permissionsByBranch[bId].add(code);
+    }
+    // Convert Set → array for JSON
+    Object.keys(permissionsByBranch).forEach(
+      (k) => (permissionsByBranch[k] = Array.from(permissionsByBranch[k]))
+    );
+
+    // JWT
+    const token = getToken(user); // returns null if JWT_SECRET misconfigured
+    if (!token) {
+      return res.status(500).json({ status: "false", message: "Token generation failed" });
+    }
 
     return res.json({
       status: "true",
@@ -128,20 +172,14 @@ exports.login = async (req, res) => {
           first_name: user.first_name,
           last_name: user.last_name,
           mobile_number: user.mobile_number,
-          is_admin: user.is_admin,
-          memberships: memberships.map((m) => ({
-            businessId: m.business_id,
-            businessName: m.business?.name,
-            branchId: m.branch_id,
-            branchName: m.branch?.name,
-            roleId: m.role_id,
-            roleName: m.role?.name,
-          })),
+          is_admin: !!user.is_admin,
+          memberships: membershipPayload,
+          permissionsByBranch, // { [branchId]: ["Leads:view", "Leads:create", ...] }
         },
       },
     });
   } catch (err) {
-    console.error("❌ Login error:", err.message);
+    console.error("❌ Login error:", err);
     return res.status(500).json({ status: "false", message: "Server error" });
   }
 };

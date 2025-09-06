@@ -1,7 +1,10 @@
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
+const { UserBranchRole, Role, Permission } = require("../models");
 
 const JWT_SECRET = process.env.JWT_SECRET
+
+
 
 // Generate JWT
 const getToken = (user) => {
@@ -22,30 +25,38 @@ const getToken = (user) => {
   }
 };
 
-// Auth middleware
 const isAuth = (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
+    // Try both: "Authorization: Bearer <token>" OR "x-auth-token: <token>"
+    let token = null;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res
-        .status(401)
-        .send({ message: "Token is not supplied or malformed." });
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      token = authHeader.slice(7); // remove "Bearer "
+    } else if (req.headers["x-auth-token"]) {
+      token = req.headers["x-auth-token"];
     }
 
-    const token = authHeader.slice(7); // remove "Bearer "
+    if (!token) {
+      return res
+        .status(401)
+        .json({ message: "Token is not supplied or malformed." });
+    }
 
+    // Verify token
     jwt.verify(token, JWT_SECRET, (err, decoded) => {
       if (err) {
-        return res.status(401).send({ message: "Invalid Token" });
+        return res.status(401).json({ message: "Invalid Token" });
       }
 
-      req.user = decoded; // attach decoded payload
+      // Attach decoded payload to request
+      req.user = decoded; // { id, isAdmin, isSeller, ... }
+
       next();
     });
   } catch (error) {
     console.error("❌ Authentication error:", error);
-    res.status(500).send({ message: "Internal Server Error" });
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 

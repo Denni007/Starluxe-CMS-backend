@@ -2,12 +2,26 @@ const Business = require("../models/business");
 
 exports.create = async (req, res) => {
   try {
-    const item = await Business.create({ ...req.body, created_by: req.user?.userId });
+    const userId = req.user?.id; // comes from auth middleware
+    
+
+    if (!userId) {
+      return res.status(401).json({ status: "false", message: "Unauthorized" });
+    }
+
+    const item = await Business.create({
+      ...req.body,
+      created_by: userId,
+      updated_by: userId,
+    });
+
     res.json({ status: "true", data: item });
   } catch (e) {
+    console.error("❌ Business create error:", e);
     res.status(400).json({ status: "false", message: e.message });
   }
 };
+
 
 exports.list = async (req, res) => {
   try {
