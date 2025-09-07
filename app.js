@@ -62,13 +62,16 @@ app.use((err, _req, res, _next) => {
   
   try {
     await sequelize.authenticate();
-    await sequelize.sync({ alter: true });
+    // await sequelize.sync({ alter: true });
+
+    await sequelize.sync(); 
 
     // await sequelize.models.Business.sync({ alter: true });
     // await sequelize.models.User.sync({ alter: true });
     // await sequelize.models.Branch.sync({ alter: true });
     // await sequelize.models.Role.sync({ alter: true });
     // await sequelize.models.Industry.sync({ alter: true });
+    // await sequelize.models.Permission.sync({force: true });
 
     app.listen(PORT, () =>
       console.log(`🚀 Server running at http://localhost:${PORT}`)

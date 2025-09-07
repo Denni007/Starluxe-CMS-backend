@@ -5,10 +5,10 @@ const RoleCtrl = require("../controller/role.js");
 
 const router = express.Router();
 
-router.get("/roles", RoleCtrl.list);
-router.get("/roles/:id", RoleCtrl.get);
-router.post("/roles", RoleCtrl.create);
-router.put("/roles/:id", RoleCtrl.update);
-router.delete("/roles/:id", RoleCtrl.remove);
+router.get("/", isAuth, RoleCtrl.list);
+router.get("/:id", isAuth, RoleCtrl.get);
+router.post("/", isAuth, RoleCtrl.create);
+router.put("/:id", isAuth, RoleCtrl.update);
+router.delete("/:id", isAuth, RoleCtrl.remove);
 
 module.exports = router;

@@ -21,6 +21,15 @@ Branch.belongsTo(Business, { foreignKey: "business_id", as: "business", onDelete
 Branch.hasMany(Role, { foreignKey: "branch_id", as: "roles", onDelete: "CASCADE", onUpdate: "CASCADE" });
 Role.belongsTo(Branch, { foreignKey: "branch_id", as: "branch", onDelete: "CASCADE", onUpdate: "CASCADE" });
 
+// Business ↔ Permission
+Business.hasMany(Permission, { foreignKey: "business_id", as: "permissions", onDelete: "CASCADE" });
+Permission.belongsTo(Business, { foreignKey: "business_id", as: "business", onDelete: "CASCADE" });
+
+RolePermission.belongsTo(Permission, { as: "permission", foreignKey: "permission_id" });
+Permission.hasMany(RolePermission, { as: "role_permissions", foreignKey: "permission_id" });
+
+
+
 // Audit: created_by / updated_by → User.id
 Business.belongsTo(User, { as: "creator", foreignKey: "created_by", onDelete: "RESTRICT", onUpdate: "CASCADE" });
 Business.belongsTo(User, { as: "updater", foreignKey: "updated_by", onDelete: "RESTRICT", onUpdate: "CASCADE" });
