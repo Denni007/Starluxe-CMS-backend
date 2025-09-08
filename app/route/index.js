@@ -6,10 +6,13 @@ const router = Router();
 router.use("/auth", require("./auth"));
 
 // Core entities
-router.use("/industry", require("./industry"));
-router.use("/business", require("./business"));
-router.use("/branch", require("./branch"));
-router.use("/role", require("./role"));
+router.use("/industries", require("./industry"));
+router.use("/businesses", require("./business"));
+router.use("/branches", require("./branch"));
+router.use("/roles", require("./role"));
+router.use("/users", require("./user"));
+router.use("/assignments", require("./assignments"));
+
 router.use("/permission", require("./permission"));
 router.use("/role-permissions", require("./RolePermission"));
 

@@ -4,6 +4,33 @@ exports.PAYMENT_TYPE = {
     FINAL_PAYMENT: "final payment"
 }
 
+exports.PERMISSION_ACTIONS = {
+    access:"access",
+    create:"create",
+    view:"view",
+    update:"update",
+    delete:"delete"
+}
+
+exports.PERMISSION_MODULES = {
+    Leads:"Leads",
+    Opportunities:"Opportunities",
+    Items:"Items",
+    Quotations:"Quotations",
+    Contacts:"Contacts",
+    Tasks:"Tasks",
+    Reminders:"Reminders",
+    Employee:"Employee",
+    Reports:"Reports",
+    Settings:"Settings",
+    Business:"Business",
+    Branches:"Branches",
+    Users:"Users",
+    Roles:"Roles",
+    Permissions:"Permissions"
+}
+
+    
 exports.ROLE = {
     SUPER_ADMIN: "Super Admin",
     ADMIN: "Admin",

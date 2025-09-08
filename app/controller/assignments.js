@@ -1,4 +1,4 @@
-const { UserBusinessRole, User, Business, Branch, Role } = require("../models");
+const { UserBranchRole, User, Business, Branch, Role } = require("../models");
 
 /**
  * Validate foreign keys + business consistency
@@ -35,7 +35,7 @@ exports.create = async (req, res) => {
     if (err) return res.status(400).json({ status: "false", message: err });
 
     // Upsert (note: return signature can vary by dialect)
-    const result = await UserBusinessRole.upsert({
+    const result = await UserBranchRole.upsert({
       user_id,
       business_id,
       branch_id,
@@ -76,7 +76,7 @@ exports.bulkCreate = async (req, res) => {
       if (err) return res.status(400).json({ status: "false", message: err, row: r });
     }
 
-    const rows = await UserBusinessRole.bulkCreate(payload, {
+    const rows = await UserBranchRole.bulkCreate(payload, {
       validate: true,
       updateOnDuplicate: ["role_id", "business_id", "branch_id"],
     });
@@ -104,7 +104,7 @@ exports.list = async (req, res) => {
     const pg = Math.max(1, Number(page));
     const lim = Math.max(1, Number(limit));
 
-    const { rows, count } = await UserBusinessRole.findAndCountAll({
+    const { rows, count } = await UserBranchRole.findAndCountAll({
       where,
       include: [
         { model: User, as: "user" },
@@ -134,7 +134,7 @@ exports.list = async (req, res) => {
  */
 exports.listByUser = async (req, res) => {
   try {
-    const rows = await UserBusinessRole.findAll({
+    const rows = await UserBranchRole.findAll({
       where: { user_id: Number(req.params.userId) },
       include: ["business", "branch", "role"],
       order: [["id", "DESC"]],
@@ -150,7 +150,7 @@ exports.listByUser = async (req, res) => {
  */
 exports.get = async (req, res) => {
   try {
-    const row = await UserBusinessRole.findByPk(req.params.id, {
+    const row = await UserBranchRole.findByPk(req.params.id, {
       include: ["user", "business", "branch", "role"],
     });
     if (!row) return res.status(404).json({ status: "false", message: "Not found" });
@@ -172,18 +172,18 @@ exports.update = async (req, res) => {
     const { user_id, business_id, branch_id, role_id } = req.body || {};
     if (user_id || business_id || branch_id || role_id) {
       const err = await validateLinks({
-        user_id: user_id ?? (await UserBusinessRole.findByPk(id))?.user_id,
-        business_id: business_id ?? (await UserBusinessRole.findByPk(id))?.business_id,
-        branch_id: branch_id ?? (await UserBusinessRole.findByPk(id))?.branch_id,
-        role_id: role_id ?? (await UserBusinessRole.findByPk(id))?.role_id,
+        user_id: user_id ?? (await UserBranchRole.findByPk(id))?.user_id,
+        business_id: business_id ?? (await UserBranchRole.findByPk(id))?.business_id,
+        branch_id: branch_id ?? (await UserBranchRole.findByPk(id))?.branch_id,
+        role_id: role_id ?? (await UserBranchRole.findByPk(id))?.role_id,
       });
       if (err) return res.status(400).json({ status: "false", message: err });
     }
 
-    const [n] = await UserBusinessRole.update(req.body, { where: { id } });
+    const [n] = await UserBranchRole.update(req.body, { where: { id } });
     if (!n) return res.status(404).json({ status: "false", message: "Not found" });
 
-    const row = await UserBusinessRole.findByPk(id, { include: ["user", "business", "branch", "role"] });
+    const row = await UserBranchRole.findByPk(id, { include: ["user", "business", "branch", "role"] });
     res.json({ status: "true", data: row });
   } catch (e) {
     res.status(400).json({ status: "false", message: e.message });
@@ -206,7 +206,7 @@ exports.bulkUpdate = async (req, res) => {
       // Optional: validate if FKs present
       const { user_id, business_id, branch_id, role_id } = data;
       if (user_id || business_id || branch_id || role_id) {
-        const current = await UserBusinessRole.findByPk(id);
+        const current = await UserBranchRole.findByPk(id);
         if (!current) continue;
         const err = await validateLinks({
           user_id: user_id ?? current.user_id,
@@ -217,7 +217,7 @@ exports.bulkUpdate = async (req, res) => {
         if (err) return res.status(400).json({ status: "false", message: err, id });
       }
 
-      const [n] = await UserBusinessRole.update(data, { where: { id } });
+      const [n] = await UserBranchRole.update(data, { where: { id } });
       updated += n;
     }
 
@@ -232,7 +232,7 @@ exports.bulkUpdate = async (req, res) => {
  */
 exports.remove = async (req, res) => {
   try {
-    const n = await UserBusinessRole.destroy({ where: { id: req.params.id } });
+    const n = await UserBranchRole.destroy({ where: { id: req.params.id } });
     if (!n) return res.status(404).json({ status: "false", message: "Not found" });
     res.json({ status: "true", deleted: n });
   } catch (e) {
@@ -247,7 +247,7 @@ exports.remove = async (req, res) => {
 exports.bulkRemove = async (req, res) => {
   try {
     const { ids = [] } = req.body || {};
-    const n = await UserBusinessRole.destroy({ where: { id: ids } });
+    const n = await UserBranchRole.destroy({ where: { id: ids } });
     res.json({ status: "true", deleted: n });
   } catch (e) {
     res.status(400).json({ status: "false", message: e.message });

@@ -1,38 +1,29 @@
 // app/controller/permission.controller.js
-const Permission = require("../models/Permission");
+const Permission = require("../models/permission");
 const { Op } = require("sequelize");
 
-const ALLOWED_ACTIONS = ["create", "update", "delete", "view"];
+const ALLOWED_ACTIONS = ["create", "update", "delete", "view","access"];
 
 /**
- * GET /permissions?business_id=1
+ * GET /permissions
+ * Returns [{ module, actions: ["create","update","delete","view"] }, ...]
  */
-exports.list = async (req, res) => {
+exports.list = async (_req, res) => {
   try {
     const items = await Permission.findAll({
-      order: [["business_id", "ASC"], ["module", "ASC"], ["action", "ASC"]],
+      attributes: ["id", "module", "action"],
+      order: [["module", "ASC"], ["action", "ASC"]],
     });
 
-    // Group by business_id → module → actions[]
-    const grouped = {};
-    for (const item of items) {
-      const bizId = item.business_id;
-      if (!grouped[bizId]) {
-        grouped[bizId] = {};
-      }
-      if (!grouped[bizId][item.module]) {
-        grouped[bizId][item.module] = [];
-      }
-      grouped[bizId][item.module].push(item.action);
+    const grouped = new Map();
+    for (const { module, action } of items) {
+      if (!grouped.has(module)) grouped.set(module, new Set());
+      grouped.get(module).add(action);
     }
 
-    // Convert to array with explicit business_id field
-    const data = Object.entries(grouped).map(([bizId, modules]) => ({
-      business_id: Number(bizId),
-      permissions: Object.entries(modules).map(([module, actions]) => ({
-        module,
-        actions,
-      })),
+    const data = Array.from(grouped.entries()).map(([module, actionsSet]) => ({
+      module,
+      actions: Array.from(actionsSet).sort(),
     }));
 
     res.json({ status: "true", data });
@@ -42,52 +33,49 @@ exports.list = async (req, res) => {
   }
 };
 
-
 /**
  * POST /permissions
- * Body: { business_id, module } OR [ { business_id, module }, ... ]
- * Automatically creates 4 actions (create, update, delete, view)
+ * Body: { module } OR [ { module }, ... ]
+ * Auto-creates actions: create, update, delete, view
  */
 exports.create = async (req, res) => {
   try {
-    // normalize payload to [{ business_id, module }, ...] as you already do
+    // Normalize payload to modules array
     let modules = [];
     if (Array.isArray(req.body)) {
-      modules = req.body.map(({ business_id, module }) => ({
-        business_id: Number(business_id),
-        module: String(module).trim(),
-      }));
+      modules = req.body.map((r) => String(r.module || "").trim()).filter(Boolean);
     } else {
-      const { business_id, module } = req.body;
-      modules = [{ business_id: Number(business_id), module: String(module).trim() }];
+      const { module } = req.body || {};
+      if (module) modules = [String(module).trim()];
     }
 
-    // build rows to insert (4 actions per module)
+    if (!modules.length) {
+      return res.status(400).json({ status: "false", message: "module is required" });
+    }
+
+    // Build rows to insert (4 actions per module)
     const rowsToCreate = [];
     for (const m of modules) {
       for (const action of ALLOWED_ACTIONS) {
         rowsToCreate.push({
-          business_id: m.business_id,
-          module: m.module,
+          module: m,
           action,
+          // If your model has a unique "code" column, uncomment:
+          // code: `${m}:${action}`,
         });
       }
     }
 
-    // insert (duplicates skipped)
+    // Insert (skip duplicates if unique index exists on (module, action) or code)
     await Permission.bulkCreate(rowsToCreate, {
       validate: true,
-      ignoreDuplicates: true, // causes skipped rows to come back as id: null
+      ignoreDuplicates: true,
     });
 
-    // ✅ fetch the definitive rows (with IDs) to return
-    const businessIds = [...new Set(modules.map(m => m.business_id))];
-    const moduleNames = [...new Set(modules.map(m => m.module))];
-
+    // Return definitive rows
     const result = await Permission.findAll({
       where: {
-        business_id: { [Op.in]: businessIds },
-        module: { [Op.in]: moduleNames },
+        module: { [Op.in]: modules },
         action: { [Op.in]: ALLOWED_ACTIONS },
       },
       order: [["module", "ASC"], ["action", "ASC"]],
@@ -95,7 +83,39 @@ exports.create = async (req, res) => {
 
     return res.status(201).json({ status: "true", data: result });
   } catch (e) {
-    console.error("Permission create error:", e);
+    console.error("❌ Permission create error:", e);
+    res.status(500).json({ status: "false", message: e.message });
+  }
+};
+
+/* -------- Optional helpers (no business_id) -------- */
+
+/**
+ * DELETE /permissions/module/:module
+ * Remove all actions under a module
+ */
+exports.removeModule = async (req, res) => {
+  try {
+    const n = await Permission.destroy({ where: { module: String(req.params.module || "").trim() } });
+    if (!n) return res.status(404).json({ status: "false", message: "Module not found" });
+    res.json({ status: "true", deleted: n });
+  } catch (e) {
+    res.status(500).json({ status: "false", message: e.message });
+  }
+};
+
+/**
+ * DELETE /permissions/module/:module/action/:action
+ * Remove a specific action under a module
+ */
+exports.removeAction = async (req, res) => {
+  try {
+    const module = String(req.params.module || "").trim();
+    const action = String(req.params.action || "").trim();
+    const n = await Permission.destroy({ where: { module, action } });
+    if (!n) return res.status(404).json({ status: "false", message: "Not found" });
+    res.json({ status: "true", deleted: n });
+  } catch (e) {
     res.status(500).json({ status: "false", message: e.message });
   }
 };

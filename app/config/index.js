@@ -16,7 +16,7 @@ const sequelize = new Sequelize({
   dialect: "sqlite",
   storage: DB_FILE,
   logging: false,
-  pool: { max: 1, min: 0, idle: 10000, acquire: 60000 },
+  pool: { max: 1, min: 0, idle: 10000, acquire: 120000 }, // <= important for sqlite
   retry: { max: 5 },
 });
 
