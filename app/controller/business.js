@@ -3,7 +3,7 @@ const Business = require("../models/business");
 exports.create = async (req, res) => {
   try {
     const userId = req.user?.id; // comes from auth middleware
-    
+    console.log(req.body)
 
     if (!userId) {
       return res.status(401).json({ status: "false", message: "Unauthorized" });

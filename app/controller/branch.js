@@ -14,15 +14,10 @@ const UserBranchRole = require("../models/UserBranchRole.js"); // for user-wise 
  */
 exports.list = async (req, res) => {
   try {
-    const items = await Role.findAll({
-      include: [
-        { model: Branch, as: "branch", attributes: ["id", "name", "type", "city", "business_id"] },
-      ],
-      order: [["name", "ASC"]],
-    });
+    const items = await Branch.findAll({ order: [["id", "DESC"]] });
     res.json({ status: "true", data: items });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -49,52 +44,45 @@ exports.get = async (req, res) => {
  * Supports single or bulk create
  * Automatically sets created_by / updated_by from auth user
  */
+
 exports.create = async (req, res) => {
   try {
     const userId = req.user?.id;
+    console.log(req.body);
+    const { name, email, contact_number, type, address_1, landmark, city, state, country, pincode, business_id } = req.body;
 
-    // Ensure auth user exists (optional hard check)
-    const user = await User.findByPk(userId);
-    if (!user) return res.status(400).json({ status: "false", message: "Invalid user" });
-
-    const payload = req.body;
-
-    // Helper to verify branch exists
-    const ensureBranch = async (branch_id) => {
-      if (!branch_id) return true; // allow null if model permits
-      const b = await Branch.findByPk(branch_id);
-      if (!b) throw new Error(`Branch ${branch_id} not found`);
-      return true;
-    };
-
-    let data;
-
-    if (Array.isArray(payload)) {
-      // Validate all branches first
-      for (const r of payload) await ensureBranch(r.branch_id);
-
-      const rows = payload.map((r) => ({
-        ...r,
-        created_by: userId,
-        updated_by: userId,
-      }));
-      data = await Role.bulkCreate(rows, { validate: true });
-    } else {
-      await ensureBranch(payload.branch_id);
-      data = await Role.create({
-        ...payload,
-        created_by: userId,
-        updated_by: userId,
-      });
+    if (!business_id) {
+      return res.status(400).json({ status: "false", message: "business_id is required" });
     }
 
-    res.status(201).json({ status: "true", data });
+    const business = await Business.findByPk(business_id);
+    if (!business) {
+      return res.status(404).json({ status: "false", message: "Business not found" });
+    }
+
+    const item = await Branch.create({
+      name,
+      email,
+      contact_number,
+      type,
+      address_1,
+      landmark,
+      city,
+      state,
+      country,
+      pincode,
+      business_id,
+      created_by: userId,
+      updated_by: userId,
+    });
+
+    res.status(201).json({ status: "true", data: item });
   } catch (e) {
-    console.error("❌ Error creating roles:", e.message);
-    const message = /Branch .* not found/.test(e.message) ? e.message : e.message;
-    res.status(500).json({ status: "false", message });
+    console.error("❌ Branch create error:", e);
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
+
 
 /**
  * PUT /roles/:id
@@ -290,7 +278,7 @@ exports.createForBusiness = async (req, res) => {
     const {
       name,
       type,          // optional if your model has it
-      address,
+      address_1,
       city,
       state,
       country,
@@ -308,7 +296,7 @@ exports.createForBusiness = async (req, res) => {
       business_id: businessId,
       name,
       type: type ?? null,
-      address: address ?? null,
+      address_1: address_1 ?? null,
       city: city ?? null,
       state: state ?? null,
       country: country ?? null,

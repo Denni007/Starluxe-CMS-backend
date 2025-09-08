@@ -13,7 +13,7 @@ router.use("/roles", require("./role"));
 router.use("/users", require("./user"));
 router.use("/assignments", require("./assignments"));
 
-router.use("/permission", require("./permission"));
+router.use("/permissions", require("./permission"));
 router.use("/role-permissions", require("./RolePermission"));
 
 // You can add more modules as you build them
