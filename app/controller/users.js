@@ -16,6 +16,52 @@ const {
 
 } = require("../models");
 
+// ---- helpers ----
+function hasOwn(obj, key) {
+  return Object.prototype.hasOwnProperty.call(obj, key);
+}
+
+/**
+ * Check only the provided fields for uniqueness.
+ * Returns a string error message if a duplicate exists, else null.
+ */
+async function checkUserUniqueness(fields, excludeUserId) {
+  if (!fields || Object.keys(fields).length === 0) return null;
+
+  const idFilter = excludeUserId ? { id: { [Op.ne]: excludeUserId } } : {};
+
+  if (hasOwn(fields, "email")) {
+    const found = await User.findOne({ where: { email: fields.email, ...idFilter } });
+    if (found) return "Email already exists";
+  }
+  if (hasOwn(fields, "user_name")) {
+    const found = await User.findOne({ where: { user_name: fields.user_name, ...idFilter } });
+    if (found) return "Username already taken";
+  }
+  if (hasOwn(fields, "mobile_number")) {
+    const found = await User.findOne({ where: { mobile_number: fields.mobile_number, ...idFilter } });
+    if (found) return "Mobile number already registered";
+  }
+  return null;
+}
+
+// Helper function to normalize user body (from auth.js or similar)
+function normalizeUserBody(body) {
+  return {
+    email: body.email ? String(body.email).trim().toLowerCase() : undefined,
+    first_name: body.first_name ? String(body.first_name).trim() : undefined,
+    last_name: body.last_name ? String(body.last_name).trim() : undefined,
+    mobile_number: body.mobile_number ? String(body.mobile_number).trim() : undefined,
+    password: body.password,
+    user_name: body.user_name ? String(body.user_name).trim() : undefined,
+    gender: body.gender ? String(body.gender).trim() : undefined,
+    is_admin: typeof body.is_admin === 'boolean' ? body.is_admin : undefined,
+    is_email_verify: typeof body.is_email_verify === 'boolean' ? body.is_email_verify : undefined,
+    is_active: typeof body.is_active === 'boolean' ? body.is_active : undefined,
+
+  };
+}
+
 // ---- helpers -------------------------------------------------------------
 
 function includeMemberships(required = false, filters = {}, opts = {}) {
@@ -509,6 +555,63 @@ exports.check = async (req, res) => {
     if (msg) return res.status(409).json({ status: "false", message: msg });
     res.json({ status: "true", message: "OK" });
   } catch (e) {
+    res.status(500).json({ status: "false", message: e.message });
+  }
+};
+/**
+ * PATCH /users/:id
+ * Partially update a user's fields.
+ */
+exports.patch = async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const b = normalizeUserBody(req.body);
+    console.log(req.body)
+    // Prevent password update here
+    delete b.password;
+
+    // Filter out undefined values from the body to only update provided fields
+    const fieldsToUpdate = {};
+    for (const key in b) {
+      if (b[key] !== undefined) {
+        fieldsToUpdate[key] = b[key];
+      }
+    }
+
+    if (Object.keys(fieldsToUpdate).length === 0) {
+      return res.status(400).json({ status: "false", message: "No fields provided for update" });
+    }
+
+    // Perform uniqueness checks only for fields that are being updated
+    const uniquenessCheckData = {};
+    if (fieldsToUpdate.email) uniquenessCheckData.email = fieldsToUpdate.email;
+    if (fieldsToUpdate.user_name) uniquenessCheckData.user_name = fieldsToUpdate.user_name;
+    if (fieldsToUpdate.mobile_number) uniquenessCheckData.mobile_number = fieldsToUpdate.mobile_number;
+
+    const dupMsg = await checkUserUniqueness(uniquenessCheckData, id);
+    if (dupMsg) return res.status(400).json({ status: "false", message: dupMsg });
+
+    // Handle specific type conversions if necessary for patch
+    if (fieldsToUpdate.mobile_number) {
+      fieldsToUpdate.mobile_number = String(fieldsToUpdate.mobile_number);
+    }
+    if (typeof fieldsToUpdate.is_admin !== "undefined") {
+      fieldsToUpdate.is_admin = !!fieldsToUpdate.is_admin;
+    }
+    if (typeof fieldsToUpdate.is_email_verify !== "undefined") {
+      fieldsToUpdate.is_email_verify = !!fieldsToUpdate.is_email_verify;
+    }
+
+    fieldsToUpdate.updated_by = req.user?.id || null;
+    console.log(fieldsToUpdate);
+    const [n] = await User.update(fieldsToUpdate, { where: { id } });
+
+    if (!n) return res.status(404).json({ status: "false", message: "User not found" });
+
+    const user = await User.findByPk(id, { include: [includeMemberships(false)] });
+    res.json({ status: "true", data: user });
+  } catch (e) {
+    console.log(e);
     res.status(500).json({ status: "false", message: e.message });
   }
 };

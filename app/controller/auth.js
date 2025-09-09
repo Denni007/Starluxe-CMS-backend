@@ -126,12 +126,12 @@ exports.login = async (req, res) => {
 
     // Build branch-scoped memberships and effective permissions
     const membershipPayload = memberships.map((m) => {
-      const businessId = m.branch?.business?.id ?? m.branch?.business_id ?? null;
-      const businessName = m.branch?.business?.name ?? null;
+      const business_id = m.branch?.business?.id ?? m.branch?.business_id ?? null;
+      const business_name = m.branch?.business?.name ?? null;
       const rolePerms = (m.role?.permissions || []).map((p) => `${p.module}:${p.action}`);
       return {
-        businessId,
-        businessName,
+        business_id,
+        business_name,
         branchId: m.branch?.id ?? m.branch_id,
         branchName: m.branch?.name ?? null,
         roleId: m.role?.id ?? m.role_id,

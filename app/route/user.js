@@ -13,8 +13,8 @@ router.post("/", /* adminAuth(`${MODULES.User}:${ACTIONS.create}`), */ UsersCtrl
 router.post("/bulk", /* adminAuth(`${MODULES.User}:${ACTIONS.create}`), */ UsersCtrl.bulkCreate);
 
 // Read
-router.get("/", isAuth,/* adminAuth(`${MODULES.User}:${ACTIONS.view}`), */ UsersCtrl.list);
-router.get("/check", /* adminAuth(`${MODULES.User}:${ACTIONS.view}`), */ UsersCtrl.check);
+router.get("/", isAuth,isAdmin,/* adminAuth(`${MODULES.User}:${ACTIONS.view}`), */ UsersCtrl.list);
+router.get("/check", isAuth,  UsersCtrl.check);
 router.get("/:id", isAuth, UsersCtrl.get);
 router.get("/me", isAuth, UsersCtrl.get);
 
@@ -22,7 +22,9 @@ router.get("/:id/memberships", /* adminAuth(`${MODULES.User}:${ACTIONS.view}`), 
 router.get("/:id/memberships/detailed", UsersCtrl.membershipsDetailed);
 
 // Update
-router.put("/users/:id", isAuth,isAdmin, UsersCtrl.update);
+router.put("/:id", isAuth,isAdmin, UsersCtrl.update);
+router.patch("/:id", isAuth,isAdmin, UsersCtrl.patch);
+
 router.put("/users/bulk", /* adminAuth(`${MODULES.User}:${ACTIONS.update}`), */ UsersCtrl.bulkUpdate);
 router.post("/users/:id/password", /* adminAuth(`${MODULES.User}:${ACTIONS.update}`), */ UsersCtrl.changePassword);
 
