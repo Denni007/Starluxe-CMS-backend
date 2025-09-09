@@ -269,7 +269,9 @@
 // };
 
 // seeders/seeds.js
-const sequelize = require("../app/config");
+// seeders/seeds.js
+// seeds/seed.all.js
+const sequelize = require("../app/config"); // Sequelize instance
 const bcrypt = require("bcrypt");
 const { Op } = require("sequelize");
 
@@ -284,101 +286,39 @@ const {
   RolePermission,
 } = require("../app/models");
 
-const {
-  PERMISSION_ACTIONS,
-  PERMISSION_MODULES,
-  ROLE,
-} = require("../app/constants/constant");
+const { PERMISSION_MODULES, ROLE } = require("../app/constants/constant");
 
-// ---------- helpers --------------------------------------------------------
+// ------------------------------------
+// Config
+// ------------------------------------
+const ALLOWED_ACTIONS = ["create", "update", "delete", "view"];
+const SALES_MODULES = ["Leads", "Opportunities", "Contacts", "Quotations", "Tasks"]; // tweak as needed
 
-async function ensureRoleWithPerms({ branchId, name, description, strategy, t }) {
-  // 1) Ensure role exists on this branch
-  const [role] = await Role.findOrCreate({
-    where: { branch_id: branchId, name },
-    defaults: {
-      branch_id: branchId,
-      name,
-      description: description || null,
-      created_by: 1,
-      updated_by: 1,
-    },
-    transaction: t,
-  });
-
-  // 2) Decide which permissions to grant
-  const ALL_MODULES = Object.values(PERMISSION_MODULES);
-  const SALES_MODULES = [
-    PERMISSION_MODULES.Leads,
-    PERMISSION_MODULES.Opportunities,
-    PERMISSION_MODULES.Contacts,
-    PERMISSION_MODULES.Quotations,
-    PERMISSION_MODULES.Tasks,
-  ];
-
-  let modules = ALL_MODULES;
-  let actions = Object.values(PERMISSION_ACTIONS);
-
-  switch (strategy) {
-    case "superadmin":
-      modules = ALL_MODULES;
-      actions = Object.values(PERMISSION_ACTIONS); // all
-      break;
-    case "manager":
-      modules = ALL_MODULES;
-      actions = [
-        PERMISSION_ACTIONS.create,
-        PERMISSION_ACTIONS.update,
-        PERMISSION_ACTIONS.view,
-      ]; // no delete
-      break;
-    case "sales":
-      modules = SALES_MODULES;
-      actions = [
-        PERMISSION_ACTIONS.create,
-        PERMISSION_ACTIONS.update,
-        PERMISSION_ACTIONS.view,
-      ];
-      break;
-    case "viewer":
-      modules = ALL_MODULES;
-      actions = [PERMISSION_ACTIONS.view];
-      break;
-    default:
-      modules = ALL_MODULES;
-      actions = [PERMISSION_ACTIONS.view];
-  }
-
-  // 3) Fetch matching permissions
-  const perms = await Permission.findAll({
-    where: {
-      module: { [Op.in]: modules },
-      action: { [Op.in]: actions },
-    },
-    attributes: ["id"],
-    transaction: t,
-  });
-
-  // 4) Map role -> permissions (idempotent)
-  for (const p of perms) {
-    await RolePermission.findOrCreate({
-      where: { role_id: role.id, permission_id: p.id },
-      defaults: { role_id: role.id, permission_id: p.id },
-      transaction: t,
-    });
-  }
-
-  return role;
+function getAllModules() {
+  return Array.isArray(PERMISSION_MODULES)
+    ? PERMISSION_MODULES
+    : Object.values(PERMISSION_MODULES || {});
 }
 
-async function assignUserToBranchRole({ userId, branchId, roleId, isPrimary = false, t }) {
-  await UserBranchRole.findOrCreate({
-    where: { user_id: userId, branch_id: branchId, role_id: roleId },
-    defaults: { user_id: userId, branch_id: branchId, role_id: roleId, is_primary: isPrimary },
-    transaction: t,
-  });
+// ------------------------------------
+// Helpers
+// ------------------------------------
+
+// Seed full permission grid (module × action)
+async function seedGlobalPermissions(t) {
+  const modules = getAllModules();
+  for (const m of modules) {
+    for (const a of ALLOWED_ACTIONS) {
+      await Permission.findOrCreate({
+        where: { module: m, action: a },
+        defaults: { module: m, action: a },
+        transaction: t,
+      });
+    }
+  }
 }
 
+// Ensure a Business and two Branches
 async function ensureBusinessWithBranches({ name, industryId, creatorId, t }) {
   const [biz] = await Business.findOrCreate({
     where: { name },
@@ -429,66 +369,132 @@ async function ensureBusinessWithBranches({ name, industryId, creatorId, t }) {
   return { biz, hq, west };
 }
 
-// ---------- main seed ------------------------------------------------------
+// Create role only (no permissions)
+async function ensureRoleOnly({ branchId, name, description, t }) {
+  const [role] = await Role.findOrCreate({
+    where: { branch_id: branchId, name },
+    defaults: {
+      branch_id: branchId,
+      name,
+      description: description || null,
+      created_by: 1,
+      updated_by: 1,
+    },
+    transaction: t,
+  });
+  return role;
+}
 
+// Return explicit arrays of permission IDs by strategy
+async function buildPermissionIdArrays(t) {
+  const ALL_MODULES = getAllModules();
+
+  const allPerms = await Permission.findAll({
+    attributes: ["id", "module", "action"],
+    transaction: t,
+  });
+
+  const allIds = allPerms.map(p => p.id);
+
+  const managerIds = allPerms
+    .filter(p => ALL_MODULES.includes(p.module) && ["create", "update", "view"].includes(p.action))
+    .map(p => p.id);
+
+  const salesIds = allPerms
+    .filter(p => SALES_MODULES.includes(p.module) && ["create", "update", "view"].includes(p.action))
+    .map(p => p.id);
+
+  const viewerIds = allPerms
+    .filter(p => ALL_MODULES.includes(p.module) && p.action === "view")
+    .map(p => p.id);
+
+  return {
+    superadmin: [...new Set(allIds)],
+    manager:    [...new Set(managerIds)],
+    sales:      [...new Set(salesIds)],
+    viewer:     [...new Set(viewerIds)],
+  };
+}
+
+// Overwrite exactly to the provided permission_ids (same semantics as your /set-ids)
+async function setRolePermissionExact(role_id, permission_ids, t) {
+  if (!role_id || !Array.isArray(permission_ids) || !permission_ids.length) {
+    throw new Error("role_id and non-empty permission_ids[] are required");
+  }
+
+  // Validate all permission IDs exist
+  // console.log(permission_ids);
+  const perms = await Permission.findAll({
+    where: { id: { [Op.in]: permission_ids } },
+    attributes: ["id"],
+    transaction: t,
+  });
+  if (perms.length !== permission_ids.length) {
+    throw new Error("One or more permission_ids are invalid");
+  }
+
+  // Diff current vs desired
+  const current = await RolePermission.findAll({
+    where: { role_id },
+    attributes: ["permission_id"],
+    transaction: t,
+  });
+  const currentIds = new Set(current.map(rp => rp.permission_id));
+  const desiredIds = new Set(permission_ids);
+
+  const toAdd = [...desiredIds].filter(id => !currentIds.has(id));
+  const toRemove = [...currentIds].filter(id => !desiredIds.has(id));
+
+  if (toAdd.length) {
+    console.log(toAdd)
+    await RolePermission.bulkCreate(
+      toAdd.map(id => ({ role_id, permission_id: id })),
+      { validate: true, ignoreDuplicates: true, transaction: t }
+    );
+  }
+  if (toRemove.length) {
+    await RolePermission.destroy({
+      where: { role_id, permission_id: { [Op.in]: toRemove } },
+      transaction: t,
+    });
+  }
+}
+
+// Link user to role in a branch
+async function assignUserToBranchRole({ userId, branchId, roleId, isPrimary = false, t }) {
+  await UserBranchRole.findOrCreate({
+    where: { user_id: userId, branch_id: branchId, role_id: roleId },
+    defaults: { user_id: userId, branch_id: branchId, role_id: roleId, is_primary: isPrimary },
+    transaction: t,
+  });
+}
+
+// ------------------------------------
+// Main seed
+// ------------------------------------
 exports.seedAdmin = async () => {
   await sequelize.transaction(async (t) => {
-    // (A) seed full permission grid
-    for (const m of Object.values(PERMISSION_MODULES)) {
-      for (const a of Object.values(PERMISSION_ACTIONS)) {
-        await Permission.findOrCreate({
-          where: { module: m, action: a },
-          defaults: { module: m, action: a },
-          transaction: t,
-        });
-      }
-    }
+    // (A) Global permissions
+    await seedGlobalPermissions(t);
 
-    // (B) industries
+    // (B) Industries
     const INDUSTRY_LIST = [
-      "Information Technology",
-      "Manufacturing",
-      "Retail",
-      "Healthcare",
-      "Finance",
-      "Logistics",
-      "Education",
-      "Real Estate",
-      "Energy",
-      "Hospitality",
+      "Information Technology", "Manufacturing", "Retail", "Healthcare", "Finance",
+      "Logistics", "Education", "Real Estate", "Energy", "Hospitality",
     ];
     for (const name of INDUSTRY_LIST) {
-      await Industry.findOrCreate({
-        where: { name },
-        defaults: { name },
-        transaction: t,
-      });
+      await Industry.findOrCreate({ where: { name }, defaults: { name }, transaction: t });
     }
+    const [it]  = await Industry.findOrCreate({ where: { name: "Information Technology" }, transaction: t });
+    const [mfg] = await Industry.findOrCreate({ where: { name: "Manufacturing" }, transaction: t });
 
-    const [it] = await Industry.findOrCreate({
-      where: { name: "Information Technology" },
-      defaults: { name: "Information Technology" },
-      transaction: t,
-    });
-    const [mfg] = await Industry.findOrCreate({
-      where: { name: "Manufacturing" },
-      defaults: { name: "Manufacturing" },
-      transaction: t,
-    });
-
-    // (C) users (5 total)
+    // (C) Users
     const [admin] = await User.findOrCreate({
       where: { email: "test@yopmail.com" },
       defaults: {
-        user_name: "sysadmin",
-        first_name: "System",
-        last_name: "Admin",
-        email: "test@yopmail.com",
-        mobile_number: "9999999919",
-        gender: "Other",
-        password: await bcrypt.hash("123456", 10),
-        is_admin: true,
-        is_email_verify: true,
+        user_name: "sysadmin", first_name: "System", last_name: "Admin",
+        email: "test@yopmail.com", mobile_number: "9999999919", gender: "Other",
+        password: await bcrypt.hash("123456", 10), is_admin: true, is_email_verify: true,
       },
       transaction: t,
     });
@@ -496,15 +502,9 @@ exports.seedAdmin = async () => {
     const [manager] = await User.findOrCreate({
       where: { email: "manager@yopmail.com" },
       defaults: {
-        user_name: "manager1",
-        first_name: "Maya",
-        last_name: "Manager",
-        email: "manager@yopmail.com",
-        mobile_number: "9999991994",
-        gender: "Female",
-        password: await bcrypt.hash("123456", 10),
-        is_admin: false,
-        is_email_verify: true,
+        user_name: "manager1", first_name: "Maya", last_name: "Manager",
+        email: "manager@yopmail.com", mobile_number: "9999991994", gender: "Female",
+        password: await bcrypt.hash("123456", 10), is_admin: false, is_email_verify: true,
       },
       transaction: t,
     });
@@ -512,15 +512,9 @@ exports.seedAdmin = async () => {
     const [salesA] = await User.findOrCreate({
       where: { email: "sales.a@yopmail.com" },
       defaults: {
-        user_name: "salesA",
-        first_name: "Sam",
-        last_name: "Sales",
-        email: "sales.a@yopmail.com",
-        mobile_number: "9999911112",
-        gender: "Male",
-        password: await bcrypt.hash("123456", 10),
-        is_admin: false,
-        is_email_verify: true,
+        user_name: "salesA", first_name: "Sam", last_name: "Sales",
+        email: "sales.a@yopmail.com", mobile_number: "9999911112", gender: "Male",
+        password: await bcrypt.hash("123456", 10), is_admin: false, is_email_verify: true,
       },
       transaction: t,
     });
@@ -528,15 +522,9 @@ exports.seedAdmin = async () => {
     const [salesB] = await User.findOrCreate({
       where: { email: "sales.b@yopmail.com" },
       defaults: {
-        user_name: "salesB",
-        first_name: "Sara",
-        last_name: "Seller",
-        email: "sales.b@yopmail.com",
-        mobile_number: "9999922222",
-        gender: "Female",
-        password: await bcrypt.hash("123456", 10),
-        is_admin: false,
-        is_email_verify: true,
+        user_name: "salesB", first_name: "Sara", last_name: "Seller",
+        email: "sales.b@yopmail.com", mobile_number: "9999922222", gender: "Female",
+        password: await bcrypt.hash("123456", 10), is_admin: false, is_email_verify: true,
       },
       transaction: t,
     });
@@ -544,97 +532,84 @@ exports.seedAdmin = async () => {
     const [viewer] = await User.findOrCreate({
       where: { email: "viewer@yopmail.com" },
       defaults: {
-        user_name: "viewer1",
-        first_name: "Vik",
-        last_name: "Viewer",
-        email: "viewer@yopmail.com",
-        mobile_number: "9999933323",
-        gender: "Male",
-        password: await bcrypt.hash("123456", 10),
-        is_admin: false,
-        is_email_verify: true,
+        user_name: "viewer1", first_name: "Vik", last_name: "Viewer",
+        email: "viewer@yopmail.com", mobile_number: "9999933323", gender: "Male",
+        password: await bcrypt.hash("123456", 10), is_admin: false, is_email_verify: true,
       },
       transaction: t,
     });
 
-    // (D) businesses + branches (Acme, Globex, Initech)
-    const acme = await ensureBusinessWithBranches({
-      name: "Acme Corp",
-      industryId: mfg.id,
-      creatorId: admin.id,
-      t,
-    });
+    // (D) Businesses + branches
+    const acme    = await ensureBusinessWithBranches({ name: "Acme Corp",   industryId: mfg.id, creatorId: admin.id, t });
+    const globex  = await ensureBusinessWithBranches({ name: "Globex Ltd",  industryId: it.id,  creatorId: admin.id, t });
+    const initech = await ensureBusinessWithBranches({ name: "Initech",     industryId: it.id,  creatorId: admin.id, t });
 
-    const globex = await ensureBusinessWithBranches({
-      name: "Globex Ltd",
-      industryId: it.id,
-      creatorId: admin.id,
-      t,
-    });
+    // (E) Roles (create only; no permissions yet)
+    const branches = [acme.hq, acme.west, globex.hq, globex.west, initech.hq, initech.west];
+    const rolesByBranch = new Map();
 
-    const initech = await ensureBusinessWithBranches({
-      name: "Initech",
-      industryId: it.id,
-      creatorId: admin.id,
-      t,
-    });
-
-    // (E) roles + permissions per branch
-    const branchSets = [acme.hq, acme.west, globex.hq, globex.west, initech.hq, initech.west];
-
-    const roleCache = {}; // key: `${branchId}:${roleName}` => role
-    async function ensureRole(branch, roleName, strategy) {
-      const key = `${branch.id}:${roleName}`;
-      if (!roleCache[key]) {
-        roleCache[key] = await ensureRoleWithPerms({
-          branchId: branch.id,
-          name: roleName,
-          description: `${roleName} of ${branch.name}`,
-          strategy,
-          t,
-        });
-      }
-      return roleCache[key];
+    async function ensureRole(branch, roleName, desc) {
+      const role = await ensureRoleOnly({
+        branchId: branch.id,
+        name: roleName,
+        description: desc || `${roleName} of ${branch.name}`,
+        t,
+      });
+      rolesByBranch.set(`${branch.id}:${roleName}`, role);
+      return role;
     }
 
-    for (const br of branchSets) {
-      await ensureRole(br, ROLE.SUPER_ADMIN, "superadmin");
-      await ensureRole(br, "Manager", "manager");
-      await ensureRole(br, "Sales", "sales");
-      await ensureRole(br, "Viewer", "viewer");
+    for (const br of branches) {
+      await ensureRole(br, ROLE.SUPER_ADMIN);
+      await ensureRole(br, "Manager");
+      await ensureRole(br, "Sales");
+      await ensureRole(br, "Viewer");
     }
 
-    // (F) memberships (UserBranchRole)
-    // sysadmin = Super Admin on all HQ branches
+    // (F) Build explicit permission arrays by strategy
+    const arrays = await buildPermissionIdArrays(t);
+    // arrays.superadmin / arrays.manager / arrays.sales / arrays.viewer are all explicit ID arrays
+
+    // (G) Assign Role→Permission EXACTLY to those arrays (dummy data via arrays)
+    for (const br of branches) {
+      const superAdminRole = rolesByBranch.get(`${br.id}:${ROLE.SUPER_ADMIN}`);
+      const managerRole    = rolesByBranch.get(`${br.id}:Manager`);
+      const salesRole      = rolesByBranch.get(`${br.id}:Sales`);
+      const viewerRole     = rolesByBranch.get(`${br.id}:Viewer`);
+
+      await setRolePermissionExact(superAdminRole.id, arrays.superadmin, t);
+      await setRolePermissionExact(managerRole.id,    arrays.manager,    t);
+      await setRolePermissionExact(salesRole.id,      arrays.sales,      t);
+      await setRolePermissionExact(viewerRole.id,     arrays.viewer,     t);
+    }
+
+    // (H) Memberships
     for (const br of [acme.hq, globex.hq, initech.hq]) {
-      const r = await ensureRole(br, ROLE.SUPER_ADMIN, "superadmin");
+      const r = rolesByBranch.get(`${br.id}:${ROLE.SUPER_ADMIN}`);
       await assignUserToBranchRole({ userId: admin.id, branchId: br.id, roleId: r.id, isPrimary: br.id === acme.hq.id, t });
     }
 
-    // manager = Manager on Acme HQ and Globex HQ
     for (const br of [acme.hq, globex.hq]) {
-      const r = await ensureRole(br, "Manager", "manager");
+      const r = rolesByBranch.get(`${br.id}:Manager`);
       await assignUserToBranchRole({ userId: manager.id, branchId: br.id, roleId: r.id, isPrimary: br.id === acme.hq.id, t });
     }
 
-    // salesA = Sales on Globex West
     {
-      const r = await ensureRole(globex.west, "Sales", "sales");
+      const r = rolesByBranch.get(`${globex.west.id}:Sales`);
       await assignUserToBranchRole({ userId: salesA.id, branchId: globex.west.id, roleId: r.id, isPrimary: true, t });
     }
-
-    // salesB = Sales on Initech HQ
     {
-      const r = await ensureRole(initech.hq, "Sales", "sales");
+      const r = rolesByBranch.get(`${initech.hq.id}:Sales`);
       await assignUserToBranchRole({ userId: salesB.id, branchId: initech.hq.id, roleId: r.id, isPrimary: true, t });
     }
-
-    // viewer = Viewer on Initech West
     {
-      const r = await ensureRole(initech.west, "Viewer", "viewer");
+      const r = rolesByBranch.get(`${initech.west.id}:Viewer`);
       await assignUserToBranchRole({ userId: viewer.id, branchId: initech.west.id, roleId: r.id, isPrimary: true, t });
     }
   });
 
-  console.log("✅ Seed complete: users, businesses, branches, roles & permissions");
+  console.log("✅ Seed complete: industries, users, businesses, branches, global permissions, roles, explicit Role→Permission arrays, memberships");
 };
+
+// If you’re using sequelize-cli, you can also export as up():
+module.exports.up = exports.seedAdmin;
