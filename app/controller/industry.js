@@ -11,7 +11,7 @@ exports.list = async (req, res) => {
     });
     res.json({ status: "true", data: items });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -26,7 +26,7 @@ exports.get = async (req, res) => {
     }
     res.json({ status: "true", data: item });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -45,10 +45,10 @@ exports.create = async (req, res) => {
       items = await Industry.create(payload);
     }
 
-    res.status(201).json({ status: "true", data: items });
+    res.status(200).json({ status: "true", data: items });
   } catch (e) {
     console.error("❌ Error creating industries:", e.message);
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -69,7 +69,7 @@ exports.update = async (req, res) => {
 
     res.json({ status: "true", data: item });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -87,6 +87,6 @@ exports.remove = async (req, res) => {
     await item.destroy();
     res.json({ status: "true", message: "Industry deleted successfully" });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };

@@ -23,7 +23,7 @@ exports.list = async (req, res) => {
     });
     res.json({ status: "true", data: items });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -41,7 +41,7 @@ exports.get = async (req, res) => {
     if (!item) return res.status(404).json({ status: "false", message: "Role not found" });
     res.json({ status: "true", data: item });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -89,11 +89,11 @@ exports.create = async (req, res) => {
       });
     }
 
-    res.status(201).json({ status: "true", data });
+    res.status(200).json({ status: "true", data });
   } catch (e) {
     console.error("❌ Error creating roles:", e.message);
     const message = /Branch .* not found/.test(e.message) ? e.message : e.message;
-    res.status(500).json({ status: "false", message });
+    res.status(400).json({ status: "false", message });
   }
 };
 
@@ -121,7 +121,7 @@ exports.update = async (req, res) => {
     await item.save();
     res.json({ status: "true", data: item });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -134,6 +134,6 @@ exports.remove = async (req, res) => {
     if (count === 0) return res.status(404).json({ status: "false", message: "Role not found" });
     res.json({ status: "true", deleted: count });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };

@@ -55,7 +55,7 @@ function checkPermission(moduleName, action) {
       next();
     } catch (err) {
       console.error("checkPermission error:", err);
-      res.status(500).json({ message: "Server error" });
+      res.status(400).json({ message: "Server error" });
     }
   };
 }

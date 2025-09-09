@@ -71,7 +71,7 @@ exports.signup = async (req, res) => {
       return res.status(400).json({ status: "false", message: err.errors[0].message });
     }
 
-    return res.status(500).json({ status: "false", message: "Something went wrong" });
+    return res.status(400).json({ status: "false", message: "Something went wrong" });
   }
 };
 
@@ -157,7 +157,7 @@ exports.login = async (req, res) => {
     // JWT
     const token = getToken(user); // returns null if JWT_SECRET misconfigured
     if (!token) {
-      return res.status(500).json({ status: "false", message: "Token generation failed" });
+      return res.status(400).json({ status: "false", message: "Token generation failed" });
     }
 
     return res.json({
@@ -180,6 +180,6 @@ exports.login = async (req, res) => {
     });
   } catch (err) {
     console.error("❌ Login error:", err);
-    return res.status(500).json({ status: "false", message: "Server error" });
+    return res.status(400).json({ status: "false", message: "Server error" });
   }
 };

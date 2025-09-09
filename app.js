@@ -23,7 +23,7 @@ app.use("/api", routes);
 // Global error handler
 app.use((err, _req, res, _next) => {
   console.error("❌ Error:", err.stack);
-  res.status(500).json({ message: "Server error", error: err.message });
+  res.status(400).json({ message: "Server error", error: err.message });
 });
 
 (async () => {

@@ -35,7 +35,7 @@ exports.get = async (req, res) => {
     if (!item) return res.status(404).json({ status: "false", message: "Role not found" });
     res.json({ status: "true", data: item });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -76,7 +76,7 @@ exports.create = async (req, res) => {
       updated_by: userId,
     });
 
-    res.status(201).json({ status: "true", data: item });
+    res.status(200).json({ status: "true", data: item });
   } catch (e) {
     console.error("❌ Branch create error:", e);
     res.status(400).json({ status: "false", message: e.message });
@@ -108,7 +108,7 @@ exports.update = async (req, res) => {
     await item.save();
     res.json({ status: "true", data: item });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -121,7 +121,7 @@ exports.remove = async (req, res) => {
     if (count === 0) return res.status(404).json({ status: "false", message: "Role not found" });
     res.json({ status: "true", deleted: count });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -136,7 +136,7 @@ exports.bulkRemove = async (req, res) => {
     const deleted = await Role.destroy({ where: { id: ids } });
     res.json({ status: "true", deleted });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -156,7 +156,7 @@ exports.listByBranch = async (req, res) => {
     });
     res.json({ status: "true", data: items });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -181,7 +181,7 @@ exports.listByBusiness = async (req, res) => {
     });
     res.json({ status: "true", data: items });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -218,7 +218,7 @@ exports.listByUser = async (req, res) => {
 
     res.json({ status: "true", data: memberships });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -260,7 +260,7 @@ exports.listForBusiness = async (req, res) => {
       meta: { total: count, page: Number(page) || 1, limit: lim },
     });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -305,8 +305,8 @@ exports.createForBusiness = async (req, res) => {
       updated_by: created_by,
     });
 
-    res.status(201).json({ status: "true", data: item });
+    res.status(200).json({ status: "true", data: item });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };

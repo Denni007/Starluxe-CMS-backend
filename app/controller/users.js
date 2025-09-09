@@ -151,7 +151,7 @@ exports.create = async (req, res) => {
       updated_by: req.user?.id || null,
     });
 
-    return res.status(201).json({ status: "true", data: user });
+    return res.status(200).json({ status: "true", data: user });
   } catch (e) {
     if (e.name === "SequelizeUniqueConstraintError" && e.errors?.[0]) {
       return res.status(400).json({ status: "false", message: e.errors[0].message });
@@ -159,7 +159,7 @@ exports.create = async (req, res) => {
     if (e.name === "SequelizeValidationError" && e.errors?.[0]) {
       return res.status(400).json({ status: "false", message: e.errors[0].message });
     }
-    return res.status(500).json({ status: "false", message: e.message });
+    return res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -199,9 +199,9 @@ exports.bulkCreate = async (req, res) => {
     }
 
     const created = await User.bulkCreate(rows, { validate: true });
-    return res.status(201).json({ status: "true", count: created.length, data: created });
+    return res.status(200).json({ status: "true", count: created.length, data: created });
   } catch (e) {
-    return res.status(500).json({ status: "false", message: e.message });
+    return res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -249,7 +249,7 @@ exports.list = async (req, res) => {
   } catch (e) {
     console.log(e);
 
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -279,7 +279,7 @@ exports.get = async (req, res) => {
 
     res.json({ status: "true", data });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -368,7 +368,7 @@ exports.membershipsDetailed = async (req, res) => {
     res.json({ status: "true", data });
   } catch (e) {
     console.error("membershipsDetailed error:", e);
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -410,7 +410,7 @@ exports.update = async (req, res) => {
     const user = await User.findByPk(id, { include: [includeMemberships(false)] });
     res.json({ status: "true", data: user });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -441,7 +441,7 @@ exports.changePassword = async (req, res) => {
 
     res.json({ status: "true", message: "Password updated" });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -454,7 +454,7 @@ exports.remove = async (req, res) => {
     if (!n) return res.status(404).json({ status: "false", message: "User not found" });
     res.json({ status: "true", deleted: n });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -469,7 +469,7 @@ exports.bulkRemove = async (req, res) => {
     const n = await User.destroy({ where: { id: ids } });
     res.json({ status: "true", deleted: n });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -515,7 +515,7 @@ exports.bulkUpdate = async (req, res) => {
 
     res.json({ status: "true", updated });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -537,7 +537,7 @@ exports.memberships = async (req, res) => {
     });
     res.json({ status: "true", data: rows });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -555,7 +555,7 @@ exports.check = async (req, res) => {
     if (msg) return res.status(409).json({ status: "false", message: msg });
     res.json({ status: "true", message: "OK" });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 /**
@@ -612,6 +612,6 @@ exports.patch = async (req, res) => {
     res.json({ status: "true", data: user });
   } catch (e) {
     console.log(e);
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };

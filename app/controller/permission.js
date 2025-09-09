@@ -29,7 +29,7 @@ exports.list = async (_req, res) => {
     res.json({ status: "true", data });
   } catch (e) {
     console.error("❌ Permission list error:", e);
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -81,10 +81,10 @@ exports.create = async (req, res) => {
       order: [["module", "ASC"], ["action", "ASC"]],
     });
 
-    return res.status(201).json({ status: "true", data: result });
+    return res.status(200).json({ status: "true", data: result });
   } catch (e) {
     console.error("❌ Permission create error:", e);
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -100,7 +100,7 @@ exports.removeModule = async (req, res) => {
     if (!n) return res.status(404).json({ status: "false", message: "Module not found" });
     res.json({ status: "true", deleted: n });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
@@ -116,6 +116,6 @@ exports.removeAction = async (req, res) => {
     if (!n) return res.status(404).json({ status: "false", message: "Not found" });
     res.json({ status: "true", deleted: n });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    res.status(400).json({ status: "false", message: e.message });
   }
 };

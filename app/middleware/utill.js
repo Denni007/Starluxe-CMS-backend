@@ -56,7 +56,7 @@ const isAuth = (req, res, next) => {
     });
   } catch (error) {
     console.error("❌ Authentication error:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(400).json({ message: "Internal Server Error" });
   }
 };
 
