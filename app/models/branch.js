@@ -19,7 +19,7 @@ const Branch = sequelize.define("Branch", {
   state:  { type: DataTypes.STRING, allowNull: false },
   country:{ type: DataTypes.STRING, allowNull: false },
   pincode:{ type: DataTypes.STRING, allowNull: false },
-
+  
   business_id: { type: DataTypes.INTEGER, allowNull: false },
   created_by: { type: DataTypes.INTEGER, allowNull: false },
   updated_by: { type: DataTypes.INTEGER, allowNull: false },

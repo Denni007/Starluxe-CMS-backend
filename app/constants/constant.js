@@ -30,7 +30,8 @@ exports.PERMISSION_MODULES = {
     Permissions:"Permissions"
 }
 
-    
+
+
 exports.ROLE = {
     SUPER_ADMIN: "Super Admin",
     ADMIN: "Admin",
@@ -38,6 +39,10 @@ exports.ROLE = {
     EMPLOYEE: "Employee",
     WORKERS: "Workers",
     OTHER: "Other",
+    MANAGER: "Manager",
+    SALES: "Sales",
+    VIEWER: "Viewer",
+    USER: "User"
 }
 
 exports.SALARY_PAYMENT_TYPE = {

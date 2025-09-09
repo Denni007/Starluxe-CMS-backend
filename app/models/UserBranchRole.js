@@ -6,8 +6,7 @@ const UserBranchRole = sequelize.define("UserBranchRole", {
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
   user_id:   { type: DataTypes.INTEGER, allowNull: false },
   branch_id: { type: DataTypes.INTEGER, allowNull: false },
-  role_id:   { type: DataTypes.INTEGER, allowNull: false },
-  is_primary: { type: DataTypes.BOOLEAN, defaultValue: false },
+  role_id:   { type: DataTypes.INTEGER, allowNull: false }
 }, {
   tableName: "user_branch_roles",
   timestamps: true,

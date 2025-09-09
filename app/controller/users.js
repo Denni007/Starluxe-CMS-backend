@@ -343,7 +343,6 @@ exports.membershipsDetailed = async (req, res) => {
         user_id: json.user_id,
         branch_id: json.branch_id,
         role_id: json.role_id,
-        is_primary: json.is_primary,
         // keep originals
         branch: json.branch && {
           id: json.branch.id,

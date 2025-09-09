@@ -446,7 +446,7 @@ async function setRolePermissionExact(role_id, permission_ids, t) {
   const toRemove = [...currentIds].filter(id => !desiredIds.has(id));
 
   if (toAdd.length) {
-    console.log(toAdd)
+    // console.log(toAdd)
     await RolePermission.bulkCreate(
       toAdd.map(id => ({ role_id, permission_id: id })),
       { validate: true, ignoreDuplicates: true, transaction: t }
@@ -464,7 +464,7 @@ async function setRolePermissionExact(role_id, permission_ids, t) {
 async function assignUserToBranchRole({ userId, branchId, roleId, isPrimary = false, t }) {
   await UserBranchRole.findOrCreate({
     where: { user_id: userId, branch_id: branchId, role_id: roleId },
-    defaults: { user_id: userId, branch_id: branchId, role_id: roleId, is_primary: isPrimary },
+    defaults: { user_id: userId, branch_id: branchId, role_id: roleId },
     transaction: t,
   });
 }
@@ -494,7 +494,7 @@ exports.seedAdmin = async () => {
       defaults: {
         user_name: "sysadmin", first_name: "System", last_name: "Admin",
         email: "test@yopmail.com", mobile_number: "9999999919", gender: "Other",
-        password: await bcrypt.hash("123456", 10), is_admin: true, is_email_verify: true,
+        password: await bcrypt.hash("123456", 10), is_admin: true, is_email_verify: true,is_active: true,
       },
       transaction: t,
     });
@@ -509,43 +509,44 @@ exports.seedAdmin = async () => {
       transaction: t,
     });
 
-    const [salesA] = await User.findOrCreate({
-      where: { email: "sales.a@yopmail.com" },
-      defaults: {
-        user_name: "salesA", first_name: "Sam", last_name: "Sales",
-        email: "sales.a@yopmail.com", mobile_number: "9999911112", gender: "Male",
-        password: await bcrypt.hash("123456", 10), is_admin: false, is_email_verify: true,
-      },
-      transaction: t,
-    });
+    // const [salesA] = await User.findOrCreate({
+    //   where: { email: "sales.a@yopmail.com" },
+    //   defaults: {
+    //     user_name: "salesA", first_name: "Sam", last_name: "Sales",
+    //     email: "sales.a@yopmail.com", mobile_number: "9999911112", gender: "Male",
+    //     password: await bcrypt.hash("123456", 10), is_admin: false, is_email_verify: true,
+    //   },
+    //   transaction: t,
+    // });
 
-    const [salesB] = await User.findOrCreate({
-      where: { email: "sales.b@yopmail.com" },
-      defaults: {
-        user_name: "salesB", first_name: "Sara", last_name: "Seller",
-        email: "sales.b@yopmail.com", mobile_number: "9999922222", gender: "Female",
-        password: await bcrypt.hash("123456", 10), is_admin: false, is_email_verify: true,
-      },
-      transaction: t,
-    });
+    // const [salesB] = await User.findOrCreate({
+    //   where: { email: "sales.b@yopmail.com" },
+    //   defaults: {
+    //     user_name: "salesB", first_name: "Sara", last_name: "Seller",
+    //     email: "sales.b@yopmail.com", mobile_number: "9999922222", gender: "Female",
+    //     password: await bcrypt.hash("123456", 10), is_admin: false, is_email_verify: true,
+    //   },
+    //   transaction: t,
+    // });
 
-    const [viewer] = await User.findOrCreate({
-      where: { email: "viewer@yopmail.com" },
-      defaults: {
-        user_name: "viewer1", first_name: "Vik", last_name: "Viewer",
-        email: "viewer@yopmail.com", mobile_number: "9999933323", gender: "Male",
-        password: await bcrypt.hash("123456", 10), is_admin: false, is_email_verify: true,
-      },
-      transaction: t,
-    });
+    // const [viewer] = await User.findOrCreate({
+    //   where: { email: "viewer@yopmail.com" },
+    //   defaults: {
+    //     user_name: "viewer1", first_name: "Vik", last_name: "Viewer",
+    //     email: "viewer@yopmail.com", mobile_number: "9999933323", gender: "Male",
+    //     password: await bcrypt.hash("123456", 10), is_admin: false, is_email_verify: true,
+    //   },
+    //   transaction: t,
+    // });
 
     // (D) Businesses + branches
     const acme    = await ensureBusinessWithBranches({ name: "Acme Corp",   industryId: mfg.id, creatorId: admin.id, t });
     const globex  = await ensureBusinessWithBranches({ name: "Globex Ltd",  industryId: it.id,  creatorId: admin.id, t });
-    const initech = await ensureBusinessWithBranches({ name: "Initech",     industryId: it.id,  creatorId: admin.id, t });
+    // const initech = await ensureBusinessWithBranches({ name: "Initech",     industryId: it.id,  creatorId: admin.id, t });
 
     // (E) Roles (create only; no permissions yet)
-    const branches = [acme.hq, acme.west, globex.hq, globex.west, initech.hq, initech.west];
+    // const branches = [acme.hq, acme.west, globex.hq, globex.west, initech.hq, initech.west];
+    const branches = [acme.hq, acme.west, globex.hq, globex.west];
     const rolesByBranch = new Map();
 
     async function ensureRole(branch, roleName, desc) {
@@ -560,10 +561,11 @@ exports.seedAdmin = async () => {
     }
 
     for (const br of branches) {
+      console.log(br.name)
       await ensureRole(br, ROLE.SUPER_ADMIN);
       await ensureRole(br, "Manager");
-      await ensureRole(br, "Sales");
-      await ensureRole(br, "Viewer");
+      // await ensureRole(br, "Sales");
+      // await ensureRole(br, "Viewer");
     }
 
     // (F) Build explicit permission arrays by strategy
@@ -572,40 +574,42 @@ exports.seedAdmin = async () => {
 
     // (G) Assign Role→Permission EXACTLY to those arrays (dummy data via arrays)
     for (const br of branches) {
+
       const superAdminRole = rolesByBranch.get(`${br.id}:${ROLE.SUPER_ADMIN}`);
       const managerRole    = rolesByBranch.get(`${br.id}:Manager`);
-      const salesRole      = rolesByBranch.get(`${br.id}:Sales`);
-      const viewerRole     = rolesByBranch.get(`${br.id}:Viewer`);
+      // const salesRole      = rolesByBranch.get(`${br.id}:Sales`);
+      // const viewerRole     = rolesByBranch.get(`${br.id}:Viewer`);
 
       await setRolePermissionExact(superAdminRole.id, arrays.superadmin, t);
       await setRolePermissionExact(managerRole.id,    arrays.manager,    t);
-      await setRolePermissionExact(salesRole.id,      arrays.sales,      t);
-      await setRolePermissionExact(viewerRole.id,     arrays.viewer,     t);
+      // await setRolePermissionExact(salesRole.id,      arrays.sales,      t);
+      // await setRolePermissionExact(viewerRole.id,     arrays.viewer,     t);
     }
 
     // (H) Memberships
-    for (const br of [acme.hq, globex.hq, initech.hq]) {
+    for (const br of [acme.hq, globex.hq,acme.west,globex.west]) {
+      console.log(br)
       const r = rolesByBranch.get(`${br.id}:${ROLE.SUPER_ADMIN}`);
       await assignUserToBranchRole({ userId: admin.id, branchId: br.id, roleId: r.id, isPrimary: br.id === acme.hq.id, t });
     }
 
-    for (const br of [acme.hq, globex.hq]) {
+    for (const br of [acme.hq, globex.west]) {
       const r = rolesByBranch.get(`${br.id}:Manager`);
       await assignUserToBranchRole({ userId: manager.id, branchId: br.id, roleId: r.id, isPrimary: br.id === acme.hq.id, t });
     }
 
-    {
-      const r = rolesByBranch.get(`${globex.west.id}:Sales`);
-      await assignUserToBranchRole({ userId: salesA.id, branchId: globex.west.id, roleId: r.id, isPrimary: true, t });
-    }
-    {
-      const r = rolesByBranch.get(`${initech.hq.id}:Sales`);
-      await assignUserToBranchRole({ userId: salesB.id, branchId: initech.hq.id, roleId: r.id, isPrimary: true, t });
-    }
-    {
-      const r = rolesByBranch.get(`${initech.west.id}:Viewer`);
-      await assignUserToBranchRole({ userId: viewer.id, branchId: initech.west.id, roleId: r.id, isPrimary: true, t });
-    }
+    // {
+    //   const r = rolesByBranch.get(`${globex.west.id}:Sales`);
+    //   await assignUserToBranchRole({ userId: manager.id, branchId: globex.west.id, roleId: r.id, isPrimary: true, t });
+    // }
+    // {
+    //   const r = rolesByBranch.get(`${initech.hq.id}:Sales`);
+    //   await assignUserToBranchRole({ userId: salesB.id, branchId: initech.hq.id, roleId: r.id, isPrimary: true, t });
+    // }
+    // {
+    //   const r = rolesByBranch.get(`${initech.west.id}:Viewer`);
+    //   await assignUserToBranchRole({ userId: viewer.id, branchId: initech.west.id, roleId: r.id, isPrimary: true, t });
+    // }
   });
 
   console.log("✅ Seed complete: industries, users, businesses, branches, global permissions, roles, explicit Role→Permission arrays, memberships");

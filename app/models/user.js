@@ -31,7 +31,7 @@ const User = sequelize.define("User", {
   image_url: { type: DataTypes.STRING, allowNull: true },
 
   is_email_verify: { type: DataTypes.BOOLEAN, defaultValue: false },
-  is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
+  is_active: { type: DataTypes.BOOLEAN, defaultValue: false },
   is_admin: { type: DataTypes.BOOLEAN, defaultValue: false },
 }, {
   tableName: "users",

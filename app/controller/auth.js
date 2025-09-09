@@ -94,7 +94,7 @@ exports.login = async (req, res) => {
       : { user_name: email.trim() };
 
     const user = await User.findOne({ where: whereClause });
-
+    
     if (!user) {
       return res.status(404).json({ status: "false", message: "User not found" });
     }
@@ -103,7 +103,9 @@ exports.login = async (req, res) => {
     if (!validPassword) {
       return res.status(401).json({ status: "false", message: "Invalid password" });
     }
-
+    if(!user.is_active){
+      return res.status(401).json({ status: "false", message: "User is not actived" });
+    }
     // Pull memberships: user ↔ branch ↔ role (+ branch → business)
     const memberships = await UserBranchRole.findAll({
       where: { user_id: user.id },
