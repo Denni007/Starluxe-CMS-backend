@@ -1,6 +1,6 @@
 const Business = require("../models/business");
 const Branch = require("../models/branch");
-const sequelize = require("../models").sequelize;
+const sequelize = require("../config");
 
 exports.createBusinessWithBranch = async (req, res) => {
   const t = await sequelize.transaction();
@@ -143,6 +143,7 @@ exports.createBusinessWithBranch = async (req, res) => {
   }
 };
 
+
 exports.create = async (req, res) => {
   try {
     const userId = req.user?.id; // comes from auth middleware
@@ -169,11 +170,28 @@ exports.create = async (req, res) => {
 exports.list = async (req, res) => {
   try {
     const items = await Business.findAll({ order: [["id", "DESC"]] });
+    if (!items) {
+      return res.status(404).json({ status: "false", message: "Business not found" });
+    }
     res.json({ status: "true", data: items });
   } catch (e) {
     res.status(400).json({ status: "false", message: e.message });
   }
 };
+
+
+exports.get = async (req, res) => {
+  try {
+    const item = await Business.findByPk(req.params.id);
+    if (!item) {
+      return res.status(404).json({ status: "false", message: "Business not found" });
+    }
+    res.json({ status: "true", data: item });
+  } catch (e) {
+    res.status(400).json({ status: "false", message: e.message });
+  }
+};
+
 
 exports.update = async (req, res) => {
   try {

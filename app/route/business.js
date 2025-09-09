@@ -7,6 +7,7 @@ const router = express.Router();
 
 // CRUD for businesses
 router.get("/", isAuth, BusinessCtrl.list);
+router.get("/:id", isAuth, BusinessCtrl.get);
 router.post("/", isAuth, BusinessCtrl.create);
 router.post("/business-branch", isAuth, BusinessCtrl.createBusinessWithBranch);
 router.patch("/:id", isAuth, BusinessCtrl.update);
