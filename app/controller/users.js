@@ -614,3 +614,70 @@ exports.patch = async (req, res) => {
     res.status(400).json({ status: "false", message: e.message });
   }
 };
+
+
+exports.getBranchUsers = async (req, res) => {
+  try {
+    const userID =  req.user?.id;
+    console.log(userID);
+    const branchId = Number(req.params.id );
+    if (!branchId) return res.status(400).json({ status: "false", message: "branch_id required" });
+
+    const users = await User.findAll({
+      attributes: ["id", "email", "user_name", "first_name", "last_name", "is_admin", "is_active"],
+      include: [{
+        model: UserBranchRole,
+        as: "memberships",
+        where: { branch_id: branchId },     // << filter by this branch
+        required: true,                     // << INNER JOIN: only users who have access
+        attributes: ["id", "branch_id", "role_id"],
+        include: [
+          {
+            model: Role,
+            as: "role",
+            attributes: ["id", "name", "description"],
+            include: [{
+              model: Permission,
+              as: "permissions",
+              attributes: ["id", "module", "action"],
+              through: { attributes: [] },
+            }],
+          },
+          {
+            model: Branch,
+            as: "branch",
+            attributes: ["id", "name", "type", "city", "business_id"],
+            include: [{ model: Business, as: "business", attributes: ["id", "name"] }],
+          },
+        ],
+      }],
+      order: [["id", "ASC"]],
+      distinct: true,  // avoid duplicates when includes fan out
+    });
+    const groupPerms = (perms = []) => {
+      const map = new Map();
+      for (const p of perms) {
+        if (!map.has(p.module)) map.set(p.module, new Set());
+        map.get(p.module).add(p.action);
+      }
+      return Array.from(map.entries()).map(([module, actions]) => ({
+        module, actions: Array.from(actions).sort(),
+      }));
+    };
+
+    const data = users.map(u => {
+      const json = u.toJSON();
+      if (Array.isArray(json.memberships)) {
+        json.memberships = json.memberships.map(m => ({
+          ...m,
+          role_permission_matrix: groupPerms(m?.role?.permissions || []),
+        }));
+      }
+      return json;
+    });
+
+    return res.json({ status: "true", data });
+  } catch (e) {
+    res.status(400).json({ status: "false", message: e.message });
+  }
+};

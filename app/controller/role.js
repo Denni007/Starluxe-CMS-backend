@@ -4,6 +4,7 @@
 const Role = require("../models/role.js");
 const Branch = require("../models/branch.js");
 const User = require("../models/user.js");
+const UserBranchRole = require("../models/UserBranchRole.js");
 
 
 exports.list = async (req, res) => {
@@ -34,9 +35,13 @@ exports.get = async (req, res) => {
 exports.listByBranch = async (req, res) => {
   try {
     const { id } = req.params;
-    const items = await Role.findAll({
-      where: { branch_id: id },
+    const items = await UserBranchRole.findAll({
+      where: { branch_id: id  },
       order: [["id", "DESC"]],
+      include: [
+        { model: Branch, as: "branch" },
+        { model: Role, as: "role" },
+      ],
     });
     res.json({ status: "true", data: items });
   } catch (e) {

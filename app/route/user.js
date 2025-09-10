@@ -17,6 +17,8 @@ router.get("/", isAuth,isAdmin,/* adminAuth(`${MODULES.User}:${ACTIONS.view}`), 
 router.get("/check", isAuth,  UsersCtrl.check);
 router.get("/:id", isAuth, UsersCtrl.get);
 router.get("/me", isAuth, UsersCtrl.get);
+router.get("/branch/:id", isAuth, UsersCtrl.getBranchUsers);
+
 
 router.get("/:id/memberships", /* adminAuth(`${MODULES.User}:${ACTIONS.view}`), */ UsersCtrl.memberships);
 router.get("/:id/memberships/detailed", UsersCtrl.membershipsDetailed);
