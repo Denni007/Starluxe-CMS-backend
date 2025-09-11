@@ -20,10 +20,10 @@ router.use("/lead-source", require("./LeadSource"));
 router.use("/lead-stage", require("./LeadStage"));
 router.use("/leads", require("./lead"));
 
+router.use("/task-stage", require("./TaskStage"));
+router.use("/tasks", require("./task"));
 
-// You can add more modules as you build them
-// router.use("/leads", require("./lead.routes"));
-// router.use("/tasks", require("./task.routes"));
-// router.use("/activities", require("./activity.routes"));
+
+
 
 module.exports = router;

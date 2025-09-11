@@ -11,13 +11,31 @@ const RolePermission = require("./RolePermission");
 const LeadSource = require("./LeadSource");
 const LeadStage = require("./LeadStage");
 const Lead = require("./lead");
+const TaskStage = require("./TaskStage");
+const Task = require("./task");
 
 
+
+// Leads ↔ LeadStage, LeadSource, User 
 Lead.belongsTo(LeadSource, { foreignKey: "lead_source_id", as: "source" });
 LeadSource.hasMany(Lead, { foreignKey: "lead_source_id", as: "leads" });
 
 Lead.belongsTo(LeadStage, { foreignKey: "lead_stage_id", as: "stage" });
 LeadStage.hasMany(Lead, { foreignKey: "lead_stage_id", as: "leads" });
+
+Lead.belongsTo(User, { foreignKey: "assigned_user", as: "assignee" });
+User.hasMany(Lead, { foreignKey: "assigned_user", as: "leads" });
+
+// tasks ↔ TaskStage, User, Lead
+Task.belongsTo(TaskStage, { foreignKey: "task_stage_id", as: "stage" });
+TaskStage.hasMany(Task, { foreignKey: "task_stage_id", as: "tasks" });
+
+Task.belongsTo(User, { foreignKey: "assigned_user", as: "assignee" });
+User.hasMany(Task, { foreignKey: "assigned_user", as: "tasks" });
+
+Task.belongsTo(Lead, { foreignKey: "lead_id", as: "lead" });
+Lead.hasMany(Task, { foreignKey: "lead_id", as: "tasks" });
+
 
 // 🔗 Business ↔ Industry
 Industry.hasMany(Business, { foreignKey: "industry_id", as: "businesses", onDelete: "RESTRICT", onUpdate: "CASCADE", });
@@ -96,7 +114,9 @@ module.exports = {
   RolePermission,
   Lead,
   LeadStage,
-  LeadSource
+  LeadSource,
+  Task,
+  TaskStage,
 };
 
 

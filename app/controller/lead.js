@@ -1,32 +1,150 @@
 // app/controller/lead.controller.js
-const Lead = require("../models/lead");
+const Lead = require("../models/lead.js");
+const User = require("../models/user.js");
+const LeadStage = require("../models/LeadStage.js");
+const LeadSource = require("../models/LeadSource.js");
 
-// GET /leads  (no pagination)
+function mapLeadPayload(leadInstance) {
+  // toJSON to get plain object
+  const obj = leadInstance.toJSON();
+
+  // map assignee -> assigned_user
+  if (obj.assignee) {
+    obj.assigned_user = {
+      id: obj.assignee.id,
+      user_name: obj.assignee.user_name,
+      email: obj.assignee.email,
+    };
+  } else {
+    // leave assigned_user as-is (scalar) if no relation loaded/found
+    // obj.assigned_user remains whatever value was in DB (number or null)
+  }
+  delete obj.assignee;
+
+  // map stage -> lead_stage_id
+  if (obj.stage) {
+    obj.lead_stage_id = {
+      id: obj.stage.id,
+      name: obj.stage.name,
+    };
+  } else {
+    // keep existing scalar lead_stage_id if no relation
+  }
+  delete obj.stage;
+
+  // map source -> lead_source_id
+  if (obj.source) {
+    obj.lead_source_id = {
+      id: obj.source.id,
+      name: obj.source.name,
+    };
+  } else {
+    // keep scalar value
+  }
+  delete obj.source;
+
+  return obj;
+}
+
+// List all leads, include relations, return mapped payload
 exports.list = async (req, res) => {
   try {
     const items = await Lead.findAll({
-      order: [["created_at", "DESC"]],
+      order: [["id", "DESC"]],
     });
+
+    if (!items) return res.status(404).json({ status: "false", message: "Not found" });
+
     res.json({ status: "true", data: items });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    console.error("Lead list error:", e);
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
-// GET /leads/:id
+// Get single lead by id with same mapping
 exports.getById = async (req, res) => {
   try {
-    const item = await Lead.findByPk(req.params.id);
-    if (!item) return res.status(404).json({ status: "false", message: "Lead not found" });
-    res.json({ status: "true", data: item });
+    const item = await Lead.findByPk(req.params.id, {
+      include: [
+        {
+          model: User,
+          as: "assignee",
+          attributes: ["id", "user_name", "email"],
+        },
+        {
+          model: LeadStage,
+          as: "stage",
+          attributes: ["id", "name"],
+        },
+        {
+          model: LeadSource,
+          as: "source",
+          attributes: ["id", "name"],
+        },
+      ],
+    });
+
+    if (!item) return res.status(404).json({ status: "false", message: "Not found" });
+
+    const mapped = mapLeadPayload(item);
+    res.json({ status: "true", data: mapped });
   } catch (e) {
-    res.status(500).json({ status: "false", message: e.message });
+    console.error("Lead getById error:", e);
+    res.status(400).json({ status: "false", message: e.message });
+  }
+};
+
+exports.listByBranch = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const items = await Lead.findAll({
+      where: { branch_id: id },
+      order: [["id", "DESC"]],
+      include: [
+        { model: User, as: "assignee", attributes: ["id", "user_name", "email"] },
+        { model: LeadStage, as: "stage", attributes: ["id", "name"] },
+        { model: LeadSource, as: "source", attributes: ["id", "name"] },
+      ],
+    });
+
+    // items is an array — map each element
+    const mapped = (items || []).map(mapLeadPayload);
+
+    res.json({ status: "true", data: mapped });
+  } catch (e) {
+    console.error("Lead listByBranch error:", e);
+    res.status(400).json({ status: "false", message: e.message });
+  }
+};
+
+exports.listByUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const items = await Lead.findAll({
+      where: { assigned_user: id },
+      order: [["id", "DESC"]],
+      include: [
+        { model: User, as: "assignee", attributes: ["id", "user_name", "email"] },
+        { model: LeadStage, as: "stage", attributes: ["id", "name"] },
+        { model: LeadSource, as: "source", attributes: ["id", "name"] },
+      ],
+    });
+
+    // items is an array — map each element
+    const mapped = (items || []).map(mapLeadPayload);
+
+    res.json({ status: "true", data: mapped });
+  } catch (e) {
+    console.error("Lead listByBranch error:", e);
+    res.status(400).json({ status: "false", message: e.message });
   }
 };
 
 // POST /leads  (create)
 exports.create = async (req, res) => {
-    console.log("Creating lead with data:", req.body);
     
   try {
     const userId = req.user?.id || null;

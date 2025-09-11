@@ -13,7 +13,7 @@ router.post("/", /* adminAuth(`${MODULES.User}:${ACTIONS.create}`), */ UsersCtrl
 router.post("/bulk", /* adminAuth(`${MODULES.User}:${ACTIONS.create}`), */ UsersCtrl.bulkCreate);
 
 // Read
-router.get("/", isAuth,isAdmin,/* adminAuth(`${MODULES.User}:${ACTIONS.view}`), */ UsersCtrl.list);
+router.get("/", isAuth,/* adminAuth(`${MODULES.User}:${ACTIONS.view}`), */ UsersCtrl.list);
 router.get("/check", isAuth,  UsersCtrl.check);
 router.get("/:id", isAuth, UsersCtrl.get);
 router.get("/me", isAuth, UsersCtrl.get);

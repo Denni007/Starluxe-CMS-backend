@@ -271,6 +271,8 @@
 // seeders/seeds.js
 // seeders/seeds.js
 // seeds/seed.all.js
+
+
 const sequelize = require("../app/config"); // Sequelize instance
 const bcrypt = require("bcrypt");
 const { Op } = require("sequelize");
@@ -284,7 +286,11 @@ const {
   Industry,
   UserBranchRole,
   RolePermission,
-  
+  LeadSource,
+  LeadStage,
+  Lead,
+  TaskStage,
+  Task,
 } = require("../app/models");
 
 const { PERMISSION_MODULES, ROLE } = require("../app/constants/constant");
@@ -411,9 +417,9 @@ async function buildPermissionIdArrays(t) {
 
   return {
     superadmin: [...new Set(allIds)],
-    manager:    [...new Set(managerIds)],
-    sales:      [...new Set(salesIds)],
-    viewer:     [...new Set(viewerIds)],
+    manager: [...new Set(managerIds)],
+    sales: [...new Set(salesIds)],
+    viewer: [...new Set(viewerIds)],
   };
 }
 
@@ -449,8 +455,11 @@ async function setRolePermissionExact(role_id, permission_ids, t) {
   if (toAdd.length) {
     // console.log(toAdd)
     await RolePermission.bulkCreate(
-      toAdd.map(id => ({ role_id, permission_id: id })),
-      { validate: true, ignoreDuplicates: true, transaction: t }
+      toAdd.map(id => ({ role_id, permission_id: id })), {
+        validate: true,
+        ignoreDuplicates: true,
+        transaction: t
+      }
     );
   }
   if (toRemove.length) {
@@ -484,28 +493,63 @@ exports.seedAdmin = async () => {
       "Logistics", "Education", "Real Estate", "Energy", "Hospitality",
     ];
     for (const name of INDUSTRY_LIST) {
-      await Industry.findOrCreate({ where: { name }, defaults: { name }, transaction: t });
+      await Industry.findOrCreate({
+        where: {
+          name
+        },
+        defaults: {
+          name
+        },
+        transaction: t
+      });
     }
-    const [it]  = await Industry.findOrCreate({ where: { name: "Information Technology" }, transaction: t });
-    const [mfg] = await Industry.findOrCreate({ where: { name: "Manufacturing" }, transaction: t });
+    const [it] = await Industry.findOrCreate({
+      where: {
+        name: "Information Technology"
+      },
+      transaction: t
+    });
+    const [mfg] = await Industry.findOrCreate({
+      where: {
+        name: "Manufacturing"
+      },
+      transaction: t
+    });
 
     // (C) Users
     const [admin] = await User.findOrCreate({
-      where: { email: "test@yopmail.com" },
+      where: {
+        email: "test@yopmail.com"
+      },
       defaults: {
-        user_name: "sysadmin", first_name: "System", last_name: "Admin",
-        email: "test@yopmail.com", mobile_number: "9999999919", gender: "Other",
-        password: await bcrypt.hash("123456", 10), is_admin: true, is_email_verify: true,is_active: true,
+        user_name: "sysadmin",
+        first_name: "System",
+        last_name: "Admin",
+        email: "test@yopmail.com",
+        mobile_number: "9999999919",
+        gender: "Other",
+        password: await bcrypt.hash("123456", 10),
+        is_admin: true,
+        is_email_verify: true,
+        is_active: true,
       },
       transaction: t,
     });
 
     const [manager] = await User.findOrCreate({
-      where: { email: "manager@yopmail.com" },
+      where: {
+        email: "manager@yopmail.com"
+      },
       defaults: {
-        user_name: "manager1", first_name: "Maya", last_name: "Manager",
-        email: "manager@yopmail.com", mobile_number: "9999991994", gender: "Female",
-        password: await bcrypt.hash("123456", 10), is_admin: false, is_email_verify: true,
+        user_name: "manager1",
+        first_name: "Maya",
+        last_name: "Manager",
+        email: "manager@yopmail.com",
+        mobile_number: "9999991994",
+        gender: "Female",
+        password: await bcrypt.hash("123456", 10),
+        is_admin: false,
+        is_email_verify: true,
       },
       transaction: t,
     });
@@ -541,9 +585,19 @@ exports.seedAdmin = async () => {
     // });
 
     // (D) Businesses + branches
-    const acme    = await ensureBusinessWithBranches({ name: "Acme Corp",   industryId: mfg.id, creatorId: admin.id, t });
-    const globex  = await ensureBusinessWithBranches({ name: "Globex Ltd",  industryId: it.id,  creatorId: admin.id, t });
-    // const initech = await ensureBusinessWithBranches({ name: "Initech",     industryId: it.id,  creatorId: admin.id, t });
+    const acme = await ensureBusinessWithBranches({
+      name: "Acme Corp",
+      industryId: mfg.id,
+      creatorId: admin.id,
+      t
+    });
+    const globex = await ensureBusinessWithBranches({
+      name: "Globex Ltd",
+      industryId: it.id,
+      creatorId: admin.id,
+      t
+    });
+    // const initech = await ensureBusinessWithBranches({ name: "Initech",   industryId: it.id,  creatorId: admin.id, t });
 
     // (E) Roles (create only; no permissions yet)
     // const branches = [acme.hq, acme.west, globex.hq, globex.west, initech.hq, initech.west];
@@ -577,26 +631,38 @@ exports.seedAdmin = async () => {
     for (const br of branches) {
 
       const superAdminRole = rolesByBranch.get(`${br.id}:${ROLE.SUPER_ADMIN}`);
-      const managerRole    = rolesByBranch.get(`${br.id}:Manager`);
-      // const salesRole      = rolesByBranch.get(`${br.id}:Sales`);
-      // const viewerRole     = rolesByBranch.get(`${br.id}:Viewer`);
+      const managerRole = rolesByBranch.get(`${br.id}:Manager`);
+      // const salesRole    = rolesByBranch.get(`${br.id}:Sales`);
+      // const viewerRole   = rolesByBranch.get(`${br.id}:Viewer`);
 
       await setRolePermissionExact(superAdminRole.id, arrays.superadmin, t);
-      await setRolePermissionExact(managerRole.id,    arrays.manager,    t);
+      await setRolePermissionExact(managerRole.id, arrays.manager, t);
       // await setRolePermissionExact(salesRole.id,      arrays.sales,      t);
       // await setRolePermissionExact(viewerRole.id,     arrays.viewer,     t);
     }
 
     // (H) Memberships
-    for (const br of [acme.hq, globex.hq,acme.west,globex.west]) {
+    for (const br of [acme.hq, globex.hq, acme.west, globex.west]) {
       // console.log(br)
       const r = rolesByBranch.get(`${br.id}:${ROLE.SUPER_ADMIN}`);
-      await assignUserToBranchRole({ userId: admin.id, branchId: br.id, roleId: r.id, isPrimary: br.id === acme.hq.id, t });
+      await assignUserToBranchRole({
+        userId: admin.id,
+        branchId: br.id,
+        roleId: r.id,
+        isPrimary: br.id === acme.hq.id,
+        t
+      });
     }
 
     for (const br of [acme.hq, globex.west]) {
       const r = rolesByBranch.get(`${br.id}:Manager`);
-      await assignUserToBranchRole({ userId: manager.id, branchId: br.id, roleId: r.id, isPrimary: br.id === acme.hq.id, t });
+      await assignUserToBranchRole({
+        userId: manager.id,
+        branchId: br.id,
+        roleId: r.id,
+        isPrimary: br.id === acme.hq.id,
+        t
+      });
     }
 
     // {
@@ -611,9 +677,149 @@ exports.seedAdmin = async () => {
     //   const r = rolesByBranch.get(`${initech.west.id}:Viewer`);
     //   await assignUserToBranchRole({ userId: viewer.id, branchId: initech.west.id, roleId: r.id, isPrimary: true, t });
     // }
+    
+    // (I) Lead Sources & Stages
+    const leadSources = [
+      "Website",
+      "Referral",
+      "Cold Call",
+      "Social Media",
+      "Partnership",
+    ];
+    for (const name of leadSources) {
+      await LeadSource.findOrCreate({ where: { name }, defaults: { name, description: name }, transaction: t });
+    }
+
+    const leadStages = [
+      "NEW",
+      "ASSIGNED",
+      "CONTACT IN FUTURE",
+      "IN PROCESS",
+      "CONVERTED",
+      "DEAD",
+      "REFERENCE"
+    ];
+    for (const name of leadStages) {
+      await LeadStage.findOrCreate({ where: { name }, defaults: { name, description: name }, transaction: t });
+    }
+
+    const [webSource] = await LeadSource.findOrCreate({ where: { name: "Website" }, transaction: t });
+    const [referralSource] = await LeadSource.findOrCreate({ where: { name: "Referral" }, transaction: t });
+    const [newStage] = await LeadStage.findOrCreate({ where: { name: "NEW" }, transaction: t });
+    const [inProcessStage] = await LeadStage.findOrCreate({ where: { name: "IN PROCESS" }, transaction: t });
+
+    // (J) Tasks Stages
+    const taskStages = [
+      "NOT STARTED",
+      "STARTED",
+      "COMPLETED",
+      "DEFERRED",
+      "CANCELLED",
+    ];
+    for (const name of taskStages) {
+      await TaskStage.findOrCreate({ where: { name }, defaults: { name, description: name }, transaction: t });
+    }
+
+    const [notStartedStage] = await TaskStage.findOrCreate({ where: { name: "NOT STARTED" }, transaction: t });
+    const [completedStage] = await TaskStage.findOrCreate({ where: { name: "COMPLETED" }, transaction: t });
+
+
+    // (K) Leads and Tasks
+    const { hq: acmeHq, west: acmeWest } = acme;
+    const { hq: globexHq } = globex;
+
+    // Create some leads
+    const lead1 = await Lead.create({
+      lead_name: "John Doe",
+      lead_stage_id: newStage.id,
+      lead_source_id: webSource.id,
+      branch_id: acmeHq.id,
+      contact_number: ["+919876543210"],
+      email: ["john.doe@example.com"],
+      lead_type: "Individual",
+      description: "Interested in new software.",
+      assigned_user: manager.id,
+      business_name: "Acme Software",
+      dates: {
+        enquiry: "2025-09-11T10:00:00Z"
+      },
+      created_by: admin.id,
+      updated_by: admin.id,
+    }, { transaction: t });
+
+    const lead2 = await Lead.create({
+      lead_name: "Jane Smith",
+      lead_stage_id: inProcessStage.id,
+      lead_source_id: referralSource.id,
+      branch_id: globexHq.id,
+      contact_number: ["+15551234567"],
+      email: ["jane.smith@example.com"],
+      lead_type: "Business",
+      description: "Looking for a partnership opportunity.",
+      assigned_user: manager.id,
+      business_name: "Globex Ventures",
+      dates: {
+        enquiry: "2025-09-10T12:00:00Z"
+      },
+      created_by: admin.id,
+      updated_by: admin.id,
+    }, { transaction: t });
+
+    const lead3 = await Lead.create({
+      lead_name: "Test Lead",
+      lead_stage_id: newStage.id,
+      lead_source_id: webSource.id,
+      branch_id: acmeWest.id,
+      contact_number: ["+15559876543"],
+      email: ["test.lead@example.com"],
+      lead_type: "Individual",
+      description: "Lead for West branch.",
+      assigned_user: null,
+      business_name: "Test Biz",
+      dates: {
+        enquiry: "2025-09-12T09:00:00Z"
+      },
+      created_by: admin.id,
+      updated_by: admin.id,
+    }, { transaction: t });
+
+    // Create some tasks
+    await Task.create({
+      task_name: "Call John Doe",
+      task_stage_id: notStartedStage.id,
+      branch_id: acmeHq.id,
+      priority: "High",
+      assigned_user: manager.id,
+      lead_id: lead1.id,
+      created_by: admin.id,
+      updated_by: admin.id,
+    }, { transaction: t });
+
+    await Task.create({
+      task_name: "Schedule meeting with Jane Smith",
+      task_stage_id: completedStage.id,
+      branch_id: globexHq.id,
+      priority: "Medium",
+      assigned_user: manager.id,
+      lead_id: lead2.id,
+      created_by: admin.id,
+      updated_by: admin.id,
+    }, { transaction: t });
+
+    await Task.create({
+      task_name: "Follow up with Test Lead",
+      task_stage_id: notStartedStage.id,
+      branch_id: acmeWest.id,
+      priority: "Low",
+      assigned_user: null,
+      lead_id: lead3.id,
+      created_by: admin.id,
+      updated_by: admin.id,
+    }, { transaction: t });
+
   });
 
-  console.log("✅ Seed complete: industries, users, businesses, branches, global permissions, roles, explicit Role→Permission arrays, memberships");
+  console.log("✅ Seed complete: industries, users, businesses, branches, global permissions, roles, explicit Role→Permission arrays, memberships, lead sources, lead stages, leads, and tasks");
 };
 
 // If you’re using sequelize-cli, you can also export as up():

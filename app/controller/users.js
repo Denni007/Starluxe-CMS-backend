@@ -13,7 +13,7 @@ const {
   Branch,
   Role,
   Permission,       // <--- add this
-
+  Lead,             // <--- add this
 } = require("../models");
 
 // ---- helpers ----
@@ -230,9 +230,39 @@ exports.list = async (req, res) => {
     const lim = Math.max(1, Math.min(Number(limit) || 50, 200));
 
     const filteredByMembership = business_id || branch_id || role_id;
+
+    // build membership include (keeps your existing helper usage)
+    const membershipInclude = includeMemberships(!!filteredByMembership, { business_id, branch_id, role_id });
+
+    // lead include — returns leads assigned to the user via assigned_user FK
+    const leadInclude = {
+      model: Lead,
+      as: "leads",
+      required: false, // left join: users without leads still appear
+      attributes: [
+        "id",
+        "lead_name",
+        "lead_stage_id",
+        "lead_source_id",
+        "branch_id",
+        "contact_number",
+      ],
+    };
+
+    // normalize includeMemberships result (it may return an array or a single object)
+    let includes = [];
+    if (Array.isArray(membershipInclude)) {
+      includes = [...membershipInclude];
+    } else if (membershipInclude) {
+      includes = [membershipInclude];
+    }
+
+    // attach lead include
+    includes.push(leadInclude);
+
     const { rows, count } = await User.findAndCountAll({
       where,
-      include: [includeMemberships(!!filteredByMembership, { business_id, branch_id, role_id })],
+      include: includes,
       limit: lim,
       offset: (pg - 1) * lim,
       order: [["id", "DESC"]],
@@ -248,7 +278,6 @@ exports.list = async (req, res) => {
     });
   } catch (e) {
     console.log(e);
-
     res.status(400).json({ status: "false", message: e.message });
   }
 };
