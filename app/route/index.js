@@ -16,6 +16,11 @@ router.use("/UserRoleBranch", require("./UserRoleBranch"));
 router.use("/permissions", require("./permission"));
 router.use("/role-permissions", require("./RolePermission"));
 
+router.use("/lead-source", require("./LeadSource"));
+router.use("/lead-stage", require("./LeadStage"));
+router.use("/leads", require("./lead"));
+
+
 // You can add more modules as you build them
 // router.use("/leads", require("./lead.routes"));
 // router.use("/tasks", require("./task.routes"));

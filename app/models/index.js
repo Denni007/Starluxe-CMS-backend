@@ -1,17 +1,27 @@
 // app/models/index.js
 const sequelize = require("../config");
-const User           = require("./user");
-const Industry       = require("./industry");
-const Business       = require("./business");
-const Branch         = require("./branch");
-const Role           = require("./role");
-const Permission     = require("./permission");
+const User = require("./user");
+const Industry = require("./industry");
+const Business = require("./business");
+const Branch = require("./branch");
+const Role = require("./role");
+const Permission = require("./permission");
 const UserBranchRole = require("./UserBranchRole");
 const RolePermission = require("./RolePermission");
+const LeadSource = require("./LeadSource");
+const LeadStage = require("./LeadStage");
+const Lead = require("./lead");
+
+
+Lead.belongsTo(LeadSource, { foreignKey: "lead_source_id", as: "source" });
+LeadSource.hasMany(Lead, { foreignKey: "lead_source_id", as: "leads" });
+
+Lead.belongsTo(LeadStage, { foreignKey: "lead_stage_id", as: "stage" });
+LeadStage.hasMany(Lead, { foreignKey: "lead_stage_id", as: "leads" });
 
 // 🔗 Business ↔ Industry
-Industry.hasMany(Business, {  foreignKey: "industry_id",  as: "businesses",  onDelete: "RESTRICT",  onUpdate: "CASCADE",});
-Business.belongsTo(Industry, {  foreignKey: "industry_id",  as: "industry",  onDelete: "RESTRICT",  onUpdate: "CASCADE",});
+Industry.hasMany(Business, { foreignKey: "industry_id", as: "businesses", onDelete: "RESTRICT", onUpdate: "CASCADE", });
+Business.belongsTo(Industry, { foreignKey: "industry_id", as: "industry", onDelete: "RESTRICT", onUpdate: "CASCADE", });
 
 // Business ↔ Branch
 Business.hasMany(Branch, { foreignKey: "business_id", as: "branches", onDelete: "CASCADE", onUpdate: "CASCADE" });
@@ -26,19 +36,19 @@ Role.belongsTo(Branch, { foreignKey: "branch_id", as: "branch", onDelete: "CASCA
 // Permission.belongsTo(Business, { foreignKey: "business_id", as: "business", onDelete: "CASCADE" });
 
 RolePermission.belongsTo(Role, { foreignKey: "role_id", as: "role" });
-Role.hasMany(RolePermission,   { foreignKey: "role_id", as: "role_permissions" });
+Role.hasMany(RolePermission, { foreignKey: "role_id", as: "role_permissions" });
 
 RolePermission.belongsTo(Permission, { foreignKey: "permission_id", as: "permission" });
-Permission.hasMany(RolePermission,   { foreignKey: "permission_id", as: "role_permissions" });
+Permission.hasMany(RolePermission, { foreignKey: "permission_id", as: "role_permissions" });
 
 
 // Audit: created_by / updated_by → User.id
 Business.belongsTo(User, { as: "creator", foreignKey: "created_by", onDelete: "RESTRICT", onUpdate: "CASCADE" });
 Business.belongsTo(User, { as: "updater", foreignKey: "updated_by", onDelete: "RESTRICT", onUpdate: "CASCADE" });
-Branch.belongsTo(User,   { as: "creator", foreignKey: "created_by", onDelete: "RESTRICT", onUpdate: "CASCADE" });
-Branch.belongsTo(User,   { as: "updater", foreignKey: "updated_by", onDelete: "RESTRICT", onUpdate: "CASCADE" });
-Role.belongsTo(User,     { as: "creator", foreignKey: "created_by", onDelete: "RESTRICT", onUpdate: "CASCADE" });
-Role.belongsTo(User,     { as: "updater", foreignKey: "updated_by", onDelete: "RESTRICT", onUpdate: "CASCADE" });
+Branch.belongsTo(User, { as: "creator", foreignKey: "created_by", onDelete: "RESTRICT", onUpdate: "CASCADE" });
+Branch.belongsTo(User, { as: "updater", foreignKey: "updated_by", onDelete: "RESTRICT", onUpdate: "CASCADE" });
+Role.belongsTo(User, { as: "creator", foreignKey: "created_by", onDelete: "RESTRICT", onUpdate: "CASCADE" });
+Role.belongsTo(User, { as: "updater", foreignKey: "updated_by", onDelete: "RESTRICT", onUpdate: "CASCADE" });
 
 // Role ⇄ Permission (many-to-many)
 Role.belongsToMany(Permission, {
@@ -67,12 +77,12 @@ Role.belongsToMany(User, {
   otherKey: "user_id",
   as: "users",
 });
-User.hasMany(UserBranchRole,   { foreignKey: "user_id",   as: "memberships", onDelete: "CASCADE" });
+User.hasMany(UserBranchRole, { foreignKey: "user_id", as: "memberships", onDelete: "CASCADE" });
 Branch.hasMany(UserBranchRole, { foreignKey: "branch_id", as: "memberships", onDelete: "CASCADE" });
-Role.hasMany(UserBranchRole,   { foreignKey: "role_id",   as: "memberships", onDelete: "CASCADE" });
-UserBranchRole.belongsTo(User,   { foreignKey: "user_id",   as: "user" });
+Role.hasMany(UserBranchRole, { foreignKey: "role_id", as: "memberships", onDelete: "CASCADE" });
+UserBranchRole.belongsTo(User, { foreignKey: "user_id", as: "user" });
 UserBranchRole.belongsTo(Branch, { foreignKey: "branch_id", as: "branch" });
-UserBranchRole.belongsTo(Role,   { foreignKey: "role_id",   as: "role" });
+UserBranchRole.belongsTo(Role, { foreignKey: "role_id", as: "role" });
 
 module.exports = {
   sequelize,
@@ -84,6 +94,9 @@ module.exports = {
   Permission,
   UserBranchRole,
   RolePermission,
+  Lead,
+  LeadStage,
+  LeadSource
 };
 
 

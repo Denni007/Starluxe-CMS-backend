@@ -284,6 +284,7 @@ const {
   Industry,
   UserBranchRole,
   RolePermission,
+  
 } = require("../app/models");
 
 const { PERMISSION_MODULES, ROLE } = require("../app/constants/constant");
@@ -561,7 +562,7 @@ exports.seedAdmin = async () => {
     }
 
     for (const br of branches) {
-      console.log(br.name)
+      // console.log(br.name)
       await ensureRole(br, ROLE.SUPER_ADMIN);
       await ensureRole(br, "Manager");
       // await ensureRole(br, "Sales");
@@ -588,7 +589,7 @@ exports.seedAdmin = async () => {
 
     // (H) Memberships
     for (const br of [acme.hq, globex.hq,acme.west,globex.west]) {
-      console.log(br)
+      // console.log(br)
       const r = rolesByBranch.get(`${br.id}:${ROLE.SUPER_ADMIN}`);
       await assignUserToBranchRole({ userId: admin.id, branchId: br.id, roleId: r.id, isPrimary: br.id === acme.hq.id, t });
     }
