@@ -11,6 +11,13 @@ exports.PERMISSION_ACTIONS = {
     update:"update",
     delete:"delete"
 }
+exports.CUSTOMERTYPE = {
+    DISTRIBUTOR : 'Distributor',
+    RETAILER: 'Retailer',
+    CHANNEL_PARTNER :'Channel Partner',
+    BORWELL : 'Borwell',
+    END_USER : 'End User',
+  }
 
 exports.PERMISSION_MODULES = {
     Leads:"Leads",

@@ -8,7 +8,7 @@ const router = express.Router();
 router.post("/", TaskStageCtrl.create);
 router.get("/", TaskStageCtrl.list);
 router.get("/:id", TaskStageCtrl.get);
-router.put("/:id", TaskStageCtrl.update);
+router.patch("/:id", TaskStageCtrl.update);
 router.delete("/:id", TaskStageCtrl.remove);
 
 module.exports = router;

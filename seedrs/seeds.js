@@ -727,146 +727,169 @@ exports.seedAdmin = async () => {
     // (K) Leads and Tasks
     const { hq: acmeHq, west: acmeWest } = acme;
     const { hq: globexHq } = globex;
+// Create some leads (destructure the returned instance)
+const [lead1] = await Lead.findOrCreate({
+  where: { lead_name: "John Doe" },
+  defaults: {
+    lead_name: "John new",
+    lead_stage_id: newStage.id,
+    lead_source_id: webSource.id,
+    branch_id: acmeHq.id,
+    contact_number: ["+919876543210"],
+    email: ["john.doe@example.com"],
+    lead_type: "Hot",
+    customer_type: "Distributor",
+    tags: ["high-value", "new-channel"],
+    description: "Interested in new software.",
+    assigned_user: manager.id,
+    business_name: "Acme Software",
+    dates: { enquiry: "2025-09-11T10:00:00Z" },
+    created_by: admin.id,
+    updated_by: admin.id,
+  },
+  transaction: t,
+});
 
-    // Create some leads
-    const lead1 = await Lead.create({
-      lead_name: "John Doe",
-      lead_stage_id: newStage.id,
-      lead_source_id: webSource.id,
-      branch_id: acmeHq.id,
-      contact_number: ["+919876543210"],
-      email: ["john.doe@example.com"],
-      lead_type: "Individual",
-      description: "Interested in new software.",
-      assigned_user: manager.id,
-      business_name: "Acme Software",
-      dates: {
-        enquiry: "2025-09-11T10:00:00Z"
-      },
-      created_by: admin.id,
-      updated_by: admin.id,
-    }, { transaction: t });
+const [lead2] = await Lead.findOrCreate({
+  where: { lead_name: "Jane Smith" },
+  defaults: {
+    lead_name: "Jane Smith",
+    lead_stage_id: inProcessStage.id,
+    lead_source_id: referralSource.id,
+    branch_id: globexHq.id,
+    contact_number: ["+15551234567"],
+    email: ["jane.smith@example.com"],
+    lead_type: "Business",
+    customer_type: "Distributor",
+    tags: ["high-value", "new-channel"],
+    description: "Looking for a partnership opportunity.",
+    assigned_user: manager.id,
+    business_name: "Globex Ventures",
+    dates: { enquiry: "2025-09-10T12:00:00Z" },
+    created_by: admin.id,
+    updated_by: admin.id,
+  },
+  transaction: t,
+});
 
-    const lead2 = await Lead.create({
-      lead_name: "Jane Smith",
-      lead_stage_id: inProcessStage.id,
-      lead_source_id: referralSource.id,
-      branch_id: globexHq.id,
-      contact_number: ["+15551234567"],
-      email: ["jane.smith@example.com"],
-      lead_type: "Business",
-      description: "Looking for a partnership opportunity.",
-      assigned_user: manager.id,
-      business_name: "Globex Ventures",
-      dates: {
-        enquiry: "2025-09-10T12:00:00Z"
-      },
-      created_by: admin.id,
-      updated_by: admin.id,
-    }, { transaction: t });
+const [lead3] = await Lead.findOrCreate({
+  where: { lead_name: "Test Lead" },
+  defaults: {
+    lead_name: "Test Lead",
+    lead_stage_id: newStage.id,
+    lead_source_id: webSource.id,
+    branch_id: acmeWest.id,
+    contact_number: ["+15559876543"],
+    email: ["test.lead@example.com"],
+    lead_type: "Individual",
+    customer_type: "Distributor",
+    tags: ["high-value", "new-channel"],
+    description: "Lead for West branch.",
+    assigned_user: null,
+    business_name: "Test Biz",
+    dates: { enquiry: "2025-09-12T09:00:00Z" },
+    created_by: admin.id,
+    updated_by: admin.id,
+  },
+  transaction: t,
+});
 
-    const lead3 = await Lead.create({
-      lead_name: "Test Lead",
-      lead_stage_id: newStage.id,
-      lead_source_id: webSource.id,
-      branch_id: acmeWest.id,
-      contact_number: ["+15559876543"],
-      email: ["test.lead@example.com"],
-      lead_type: "Individual",
-      description: "Lead for West branch.",
-      assigned_user: null,
-      business_name: "Test Biz",
-      dates: {
-        enquiry: "2025-09-12T09:00:00Z"
-      },
-      created_by: admin.id,
-      updated_by: admin.id,
-    }, { transaction: t });
+// Create some tasks (destructure results)
+const [task1] = await Task.findOrCreate({
+  where: { task_name: "Call John Doe" },
+  defaults: {
+    task_name: "Call John Doe",
+    task_stage_id: notStartedStage.id,
+    branch_id: acmeHq.id,
+    priority: "High",
+    assigned_user: manager.id,
+    lead_id: lead1.id,
+    created_by: admin.id,
+    updated_by: admin.id,
+  },
+  transaction: t,
+});
 
-    // Create some tasks
-    const task1 = await Task.create({
-      task_name: "Call John Doe",
-      task_stage_id: notStartedStage.id,
-      branch_id: acmeHq.id,
-      priority: "High",
-      assigned_user: manager.id,
-      lead_id: lead1.id,
-      created_by: admin.id,
-      updated_by: admin.id,
-    }, { transaction: t });
+const [task2] = await Task.findOrCreate({
+  where: { task_name: "Schedule meeting with Jane Smith" },
+  defaults: {
+    task_name: "Schedule meeting with Jane Smith",
+    task_stage_id: completedStage.id,
+    branch_id: globexHq.id,
+    priority: "Medium",
+    assigned_user: manager.id,
+    lead_id: lead2.id,
+    created_by: admin.id,
+    updated_by: admin.id,
+  },
+  transaction: t,
+});
 
-    const task2 = await Task.create({
-      task_name: "Schedule meeting with Jane Smith",
-      task_stage_id: completedStage.id,
-      branch_id: globexHq.id,
-      priority: "Medium",
-      assigned_user: manager.id,
-      lead_id: lead2.id,
-      created_by: admin.id,
-      updated_by: admin.id,
-    }, { transaction: t });
+const [task3] = await Task.findOrCreate({
+  where: { task_name: "Follow up with Test Lead" },
+  defaults: {
+    task_name: "Follow up with Test Lead",
+    task_stage_id: notStartedStage.id,
+    branch_id: acmeWest.id,
+    priority: "Low",
+    assigned_user: null,
+    lead_id: lead3.id,
+    created_by: admin.id,
+    updated_by: admin.id,
+  },
+  transaction: t,
+});
 
-    const task3 = await Task.create({
-      task_name: "Follow up with Test Lead",
-      task_stage_id: notStartedStage.id,
-      branch_id: acmeWest.id,
-      priority: "Low",
-      assigned_user: null,
-      lead_id: lead3.id,
-      created_by: admin.id,
-      updated_by: admin.id,
-    }, { transaction: t });
-
-
-    const callResponseStages = ["Outgoing", "Incoming", "Missed", "No Response"];
-        for (const name of callResponseStages) {
-            await CallResponseStage.findOrCreate({
-                where: { name },
-                defaults: { name, description: name },
-                transaction: t,
-            });
-        }
-
-    // (M) Reminders
-    const [task1Reminder] = await Reminder.findOrCreate({
-      where: { task_id: task1.id },
-      defaults: {
-        reminder_name: "Follow-up Call Reminder",
-        reminder_date: "2025-09-13",
-        reminder_time: "10:00:00",
-        reminder_unit: "minute",
-        reminder_value: 30,
-        branch_id: acmeHq.id,
-        lead_id: lead1.id,
-        task_id: task1.id,
-        assigned_user: manager.id,
-        created_by: admin.id,
-        updated_by: admin.id,
-      },
-      transaction: t,
-    });
-
-    const [lead2Reminder] = await Reminder.findOrCreate({
-      where: { lead_id: lead2.id },
-      defaults: {
-        reminder_name: "Partnership Discussion Reminder",
-        reminder_date: "2025-09-14",
-        reminder_time: "14:30:00",
-        reminder_unit: "hour",
-        reminder_value: 2,
-        branch_id: globexHq.id,
-        lead_id: lead2.id,
-        task_id: null, // This is a lead-only reminder
-        assigned_user: manager.id,
-        created_by: admin.id,
-        updated_by: admin.id,
-      },
-      transaction: t,
-    });
-
+const callResponseStages = ["Outgoing", "Incoming", "Missed", "No Response"];
+for (const name of callResponseStages) {
+  await CallResponseStage.findOrCreate({
+    where: { name },
+    defaults: { name, description: name },
+    transaction: t,
   });
+}
 
-  console.log("✅ Seed complete: industries, users, businesses, branches, global permissions, roles, explicit Role→Permission arrays, memberships, lead sources, lead stages, leads, and tasks");
+// (M) Reminders
+const [task1Reminder] = await Reminder.findOrCreate({
+  where: { task_id: task1.id },
+  defaults: {
+    reminder_name: "Follow-up Call Reminder",
+    reminder_date: "2025-09-13",
+    reminder_time: "10:00:00",
+    reminder_unit: "minute",
+    reminder_value: 30,
+    branch_id: acmeHq.id,
+    lead_id: lead1.id,
+    task_id: task1.id,
+    assigned_user: manager.id,
+    created_by: admin.id,
+    updated_by: admin.id,
+  },
+  transaction: t,
+});
+
+const [lead2Reminder] = await Reminder.findOrCreate({
+  where: { lead_id: lead2.id },
+  defaults: {
+    reminder_name: "Partnership Discussion Reminder",
+    reminder_date: "2025-09-14",
+    reminder_time: "14:30:00",
+    reminder_unit: "hour",
+    reminder_value: 2,
+    branch_id: globexHq.id,
+    lead_id: lead2.id,
+    task_id: null,
+    assigned_user: manager.id,
+    created_by: admin.id,
+    updated_by: admin.id,
+  },
+  transaction: t,
+});
+});
+
+console.log(
+"✅ Seed complete: industries, users, businesses, branches, global permissions, roles, explicit Role→Permission arrays, memberships, lead sources, lead stages, leads, and tasks"
+);
 };
 
 // If you’re using sequelize-cli, you can also export as up():

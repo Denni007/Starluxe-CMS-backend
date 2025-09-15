@@ -157,6 +157,8 @@ exports.create = async (req, res) => {
       remark,
       description,
       assigned_user,
+      customer_type,
+      tags,
       business_name,
       website,
       location,
@@ -197,6 +199,8 @@ exports.create = async (req, res) => {
       contact_number,
       email: email || null,
       lead_type: lead_type || null,
+      customer_type: customer_type || null,
+      tags: tags || null, 
       remark: remark || null,
       description: description || null,
       assigned_user: assigned_user || null,
@@ -237,6 +241,7 @@ exports.patch = async (req, res) => {
     [
       "lead_name","lead_stage_id","lead_source_id","branch_id",
       "lead_type","remark","description","assigned_user",
+      "customer_type","tags",
       "business_name","website","location","alias","product_name",
       "amount","address_1","landmark","city","state","country","pincode"
     ].forEach(k => {

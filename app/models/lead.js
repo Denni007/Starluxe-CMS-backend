@@ -15,7 +15,16 @@ const Lead = sequelize.define("Lead", {
     branch_id: { type: DataTypes.INTEGER, allowNull: false },
     contact_number: { type: DataTypes.JSON, allowNull: false },
     email: { type: DataTypes.JSON, allowNull: true },
-    lead_type: { type: DataTypes.STRING, allowNull: true },
+    tags: { type: DataTypes.JSON, allowNull: true },
+
+    customer_type: {
+        type: DataTypes.ENUM("OFFICE", "WAREHOUSE", "SHOP"),
+        allowNull: true, defaultValue: "OFFICE",
+      },
+    lead_type: {
+        type: DataTypes.ENUM("OFFICE", "WAREHOUSE", "SHOP"),
+        allowNull: true, defaultValue: "OFFICE",
+      },
     remark: { type: DataTypes.TEXT, allowNull: true },
     description: { type: DataTypes.TEXT, allowNull: true },
 
