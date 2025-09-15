@@ -19,7 +19,7 @@
 // //             }
 // //           }
 // //           console.log("✅ Permissions seeded");
-          
+
 // //           const INDUSTRY_LIST = [
 // //             "Information Technology",
 // //             "Manufacturing",
@@ -32,10 +32,10 @@
 // //             "Energy",
 // //             "Hospitality",
 // //           ];
-        
+
 // //           const email = "test@yopmail.com";
 // //           const exists = await User.findOne({ where: { email } });
-        
+
 // //           if (!exists) {
 // //             await User.create({
 // //               user_name: "sysadmin",
@@ -63,7 +63,7 @@
 // //             console.log("done");
 // //             // await sleep(3000); // wait 3s before next insertion
 // //           }
-        
+
 // //           for (const name of INDUSTRY_LIST) {
 // //             await Industry.findOrCreate({
 // //               where: { name },
@@ -71,10 +71,10 @@
 // //             });
 // //             // await sleep(3000); // wait 3s before next industry
 // //           }
-        
+
 // //           const user = 1;
 // //           const found = await User.findOne({ where: { id: user } });
-        
+
 // //           if (found) {
 // //             await Business.create({
 // //               name: "Acme Corp",
@@ -84,7 +84,7 @@
 // //               updated_by: found.id,
 // //             }); 
 // //             // await sleep(3000);
-        
+
 // //             await Branch.create({
 // //               type: "OFFICE",
 // //               name: "HQ",
@@ -109,17 +109,17 @@
 // //             ); 
 // //             console.log("created")
 // //           }
-        
+
 // //     } catch (error) {
 // //         console.log(error)
 // //     }
-   
+
 // //       // seed super admin
-   
-   
+
+
 // //  }
 // //   // ensure all Permission rows exist (cartesian of modules x actions)
-  
+
 // // // module.exports = seedAdmin;
 // // seeders/seeds.js
 // const sequelize = require("../app/config");
@@ -291,6 +291,8 @@ const {
   Lead,
   TaskStage,
   Task,
+  Reminder,
+  CallResponseStage,
 } = require("../app/models");
 
 const { PERMISSION_MODULES, ROLE } = require("../app/constants/constant");
@@ -456,10 +458,10 @@ async function setRolePermissionExact(role_id, permission_ids, t) {
     // console.log(toAdd)
     await RolePermission.bulkCreate(
       toAdd.map(id => ({ role_id, permission_id: id })), {
-        validate: true,
-        ignoreDuplicates: true,
-        transaction: t
-      }
+      validate: true,
+      ignoreDuplicates: true,
+      transaction: t
+    }
     );
   }
   if (toRemove.length) {
@@ -555,33 +557,33 @@ exports.seedAdmin = async () => {
     });
 
     // const [salesA] = await User.findOrCreate({
-    //   where: { email: "sales.a@yopmail.com" },
-    //   defaults: {
-    //     user_name: "salesA", first_name: "Sam", last_name: "Sales",
-    //     email: "sales.a@yopmail.com", mobile_number: "9999911112", gender: "Male",
-    //     password: await bcrypt.hash("123456", 10), is_admin: false, is_email_verify: true,
-    //   },
-    //   transaction: t,
+    //   where: { email: "sales.a@yopmail.com" },
+    //   defaults: {
+    //     user_name: "salesA", first_name: "Sam", last_name: "Sales",
+    //     email: "sales.a@yopmail.com", mobile_number: "9999911112", gender: "Male",
+    //     password: await bcrypt.hash("123456", 10), is_admin: false, is_email_verify: true,
+    //   },
+    //   transaction: t,
     // });
 
     // const [salesB] = await User.findOrCreate({
-    //   where: { email: "sales.b@yopmail.com" },
-    //   defaults: {
-    //     user_name: "salesB", first_name: "Sara", last_name: "Seller",
-    //     email: "sales.b@yopmail.com", mobile_number: "9999922222", gender: "Female",
-    //     password: await bcrypt.hash("123456", 10), is_admin: false, is_email_verify: true,
-    //   },
-    //   transaction: t,
+    //   where: { email: "sales.b@yopmail.com" },
+    //   defaults: {
+    //     user_name: "salesB", first_name: "Sara", last_name: "Seller",
+    //     email: "sales.b@yopmail.com", mobile_number: "9999922222", gender: "Female",
+    //     password: await bcrypt.hash("123456", 10), is_admin: false, is_email_verify: true,
+    //   },
+    //   transaction: t,
     // });
 
     // const [viewer] = await User.findOrCreate({
-    //   where: { email: "viewer@yopmail.com" },
-    //   defaults: {
-    //     user_name: "viewer1", first_name: "Vik", last_name: "Viewer",
-    //     email: "viewer@yopmail.com", mobile_number: "9999933323", gender: "Male",
-    //     password: await bcrypt.hash("123456", 10), is_admin: false, is_email_verify: true,
-    //   },
-    //   transaction: t,
+    //   where: { email: "viewer@yopmail.com" },
+    //   defaults: {
+    //     user_name: "viewer1", first_name: "Vik", last_name: "Viewer",
+    //     email: "viewer@yopmail.com", mobile_number: "9999933323", gender: "Male",
+    //     password: await bcrypt.hash("123456", 10), is_admin: false, is_email_verify: true,
+    //   },
+    //   transaction: t,
     // });
 
     // (D) Businesses + branches
@@ -597,7 +599,7 @@ exports.seedAdmin = async () => {
       creatorId: admin.id,
       t
     });
-    // const initech = await ensureBusinessWithBranches({ name: "Initech",   industryId: it.id,  creatorId: admin.id, t });
+    // const initech = await ensureBusinessWithBranches({ name: "Initech",   industryId: it.id,  creatorId: admin.id, t });
 
     // (E) Roles (create only; no permissions yet)
     // const branches = [acme.hq, acme.west, globex.hq, globex.west, initech.hq, initech.west];
@@ -632,13 +634,13 @@ exports.seedAdmin = async () => {
 
       const superAdminRole = rolesByBranch.get(`${br.id}:${ROLE.SUPER_ADMIN}`);
       const managerRole = rolesByBranch.get(`${br.id}:Manager`);
-      // const salesRole    = rolesByBranch.get(`${br.id}:Sales`);
-      // const viewerRole   = rolesByBranch.get(`${br.id}:Viewer`);
+      // const salesRole    = rolesByBranch.get(`${br.id}:Sales`);
+      // const viewerRole   = rolesByBranch.get(`${br.id}:Viewer`);
 
       await setRolePermissionExact(superAdminRole.id, arrays.superadmin, t);
       await setRolePermissionExact(managerRole.id, arrays.manager, t);
-      // await setRolePermissionExact(salesRole.id,      arrays.sales,      t);
-      // await setRolePermissionExact(viewerRole.id,     arrays.viewer,     t);
+      // await setRolePermissionExact(salesRole.id,      arrays.sales,      t);
+      // await setRolePermissionExact(viewerRole.id,     arrays.viewer,     t);
     }
 
     // (H) Memberships
@@ -666,18 +668,18 @@ exports.seedAdmin = async () => {
     }
 
     // {
-    //   const r = rolesByBranch.get(`${globex.west.id}:Sales`);
-    //   await assignUserToBranchRole({ userId: manager.id, branchId: globex.west.id, roleId: r.id, isPrimary: true, t });
+    //   const r = rolesByBranch.get(`${globex.west.id}:Sales`);
+    //   await assignUserToBranchRole({ userId: manager.id, branchId: globex.west.id, roleId: r.id, isPrimary: true, t });
     // }
     // {
-    //   const r = rolesByBranch.get(`${initech.hq.id}:Sales`);
-    //   await assignUserToBranchRole({ userId: salesB.id, branchId: initech.hq.id, roleId: r.id, isPrimary: true, t });
+    //   const r = rolesByBranch.get(`${initech.hq.id}:Sales`);
+    //   await assignUserToBranchRole({ userId: salesB.id, branchId: initech.hq.id, roleId: r.id, isPrimary: true, t });
     // }
     // {
-    //   const r = rolesByBranch.get(`${initech.west.id}:Viewer`);
-    //   await assignUserToBranchRole({ userId: viewer.id, branchId: initech.west.id, roleId: r.id, isPrimary: true, t });
+    //   const r = rolesByBranch.get(`${initech.west.id}:Viewer`);
+    //   await assignUserToBranchRole({ userId: viewer.id, branchId: initech.west.id, roleId: r.id, isPrimary: true, t });
     // }
-    
+
     // (I) Lead Sources & Stages
     const leadSources = [
       "Website",
@@ -784,7 +786,7 @@ exports.seedAdmin = async () => {
     }, { transaction: t });
 
     // Create some tasks
-    await Task.create({
+    const task1 = await Task.create({
       task_name: "Call John Doe",
       task_stage_id: notStartedStage.id,
       branch_id: acmeHq.id,
@@ -795,7 +797,7 @@ exports.seedAdmin = async () => {
       updated_by: admin.id,
     }, { transaction: t });
 
-    await Task.create({
+    const task2 = await Task.create({
       task_name: "Schedule meeting with Jane Smith",
       task_stage_id: completedStage.id,
       branch_id: globexHq.id,
@@ -806,7 +808,7 @@ exports.seedAdmin = async () => {
       updated_by: admin.id,
     }, { transaction: t });
 
-    await Task.create({
+    const task3 = await Task.create({
       task_name: "Follow up with Test Lead",
       task_stage_id: notStartedStage.id,
       branch_id: acmeWest.id,
@@ -816,6 +818,53 @@ exports.seedAdmin = async () => {
       created_by: admin.id,
       updated_by: admin.id,
     }, { transaction: t });
+
+
+    const callResponseStages = ["Outgoing", "Incoming", "Missed", "No Response"];
+        for (const name of callResponseStages) {
+            await CallResponseStage.findOrCreate({
+                where: { name },
+                defaults: { name, description: name },
+                transaction: t,
+            });
+        }
+
+    // (M) Reminders
+    const [task1Reminder] = await Reminder.findOrCreate({
+      where: { task_id: task1.id },
+      defaults: {
+        reminder_name: "Follow-up Call Reminder",
+        reminder_date: "2025-09-13",
+        reminder_time: "10:00:00",
+        reminder_unit: "minute",
+        reminder_value: 30,
+        branch_id: acmeHq.id,
+        lead_id: lead1.id,
+        task_id: task1.id,
+        assigned_user: manager.id,
+        created_by: admin.id,
+        updated_by: admin.id,
+      },
+      transaction: t,
+    });
+
+    const [lead2Reminder] = await Reminder.findOrCreate({
+      where: { lead_id: lead2.id },
+      defaults: {
+        reminder_name: "Partnership Discussion Reminder",
+        reminder_date: "2025-09-14",
+        reminder_time: "14:30:00",
+        reminder_unit: "hour",
+        reminder_value: 2,
+        branch_id: globexHq.id,
+        lead_id: lead2.id,
+        task_id: null, // This is a lead-only reminder
+        assigned_user: manager.id,
+        created_by: admin.id,
+        updated_by: admin.id,
+      },
+      transaction: t,
+    });
 
   });
 

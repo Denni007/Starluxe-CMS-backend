@@ -23,6 +23,12 @@ router.use("/leads", require("./lead"));
 router.use("/task-stage", require("./TaskStage"));
 router.use("/tasks", require("./task"));
 
+router.use("/reminders", require("./reminder"));
+
+router.use("/call-response-stage", require("./CallResponseStage"));
+router.use("/calls", require("./call"));
+
+
 
 
 

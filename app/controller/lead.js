@@ -70,17 +70,14 @@ exports.getById = async (req, res) => {
         {
           model: User,
           as: "assignee",
-          attributes: ["id", "user_name", "email"],
         },
         {
           model: LeadStage,
           as: "stage",
-          attributes: ["id", "name"],
         },
         {
           model: LeadSource,
           as: "source",
-          attributes: ["id", "name"],
         },
       ],
     });

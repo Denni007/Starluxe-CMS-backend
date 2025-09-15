@@ -13,6 +13,9 @@ const LeadStage = require("./LeadStage");
 const Lead = require("./lead");
 const TaskStage = require("./TaskStage");
 const Task = require("./task");
+const Reminder = require("./reminder");
+const CallResponseStage = require("./CallResponseStage");
+const Call = require("./call");
 
 
 
@@ -26,7 +29,7 @@ LeadStage.hasMany(Lead, { foreignKey: "lead_stage_id", as: "leads" });
 Lead.belongsTo(User, { foreignKey: "assigned_user", as: "assignee" });
 User.hasMany(Lead, { foreignKey: "assigned_user", as: "leads" });
 
-// tasks ↔ TaskStage, User, Lead
+// tasks ↔ TaskStage, User, Lead, Reminder
 Task.belongsTo(TaskStage, { foreignKey: "task_stage_id", as: "stage" });
 TaskStage.hasMany(Task, { foreignKey: "task_stage_id", as: "tasks" });
 
@@ -35,6 +38,37 @@ User.hasMany(Task, { foreignKey: "assigned_user", as: "tasks" });
 
 Task.belongsTo(Lead, { foreignKey: "lead_id", as: "lead" });
 Lead.hasMany(Task, { foreignKey: "lead_id", as: "tasks" });
+
+
+// reminders ↔ User, Lead, Task
+Reminder.belongsTo(User, { foreignKey: "assigned_user", as: "assignee" });
+User.hasMany(Reminder, { foreignKey: "assigned_user", as: "reminders" });
+
+Reminder.belongsTo(Lead, { foreignKey: "lead_id", as: "lead" });
+Lead.hasMany(Reminder, { foreignKey: "lead_id", as: "reminders" });
+
+Reminder.belongsTo(Task, { foreignKey: "task_id", as: "task" });
+Task.hasMany(Reminder, { foreignKey: "task_id", as: "reminders" });
+
+Reminder.belongsTo(Call, { foreignKey: "call_id", as: "call" });
+Call.hasOne(Reminder, { foreignKey: "call_id", as: "reminder" });
+
+
+// Call ↔ Lead, Task, User, Branch, CallResponseStage
+Call.belongsTo(User, { foreignKey: "assigned_user", as: "assignee" });
+User.hasMany(Call, { foreignKey: "assigned_user", as: "calls" });
+
+Call.belongsTo(Lead, { foreignKey: "lead_id", as: "lead" });
+Lead.hasMany(Call, { foreignKey: "lead_id", as: "calls" });
+
+Call.belongsTo(Task, { foreignKey: "task_id", as: "task" });
+Task.hasMany(Call, { foreignKey: "task_id", as: "calls" });
+
+Call.belongsTo(Branch, { foreignKey: "branch_id", as: "branch" });
+Branch.hasMany(Call, { foreignKey: "branch_id", as: "calls" });
+
+Call.belongsTo(CallResponseStage, { foreignKey: "call_response_id", as: "callResponseStage" });
+CallResponseStage.hasMany(Call, { foreignKey: "call_response_id", as: "calls" });
 
 
 // 🔗 Business ↔ Industry
@@ -117,6 +151,9 @@ module.exports = {
   LeadSource,
   Task,
   TaskStage,
+  Reminder,
+  CallResponseStage,
+  Call
 };
 
 
