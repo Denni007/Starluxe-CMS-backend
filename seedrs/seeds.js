@@ -271,8 +271,6 @@
 // seeders/seeds.js
 // seeders/seeds.js
 // seeds/seed.all.js
-
-
 const sequelize = require("../app/config"); // Sequelize instance
 const bcrypt = require("bcrypt");
 const { Op } = require("sequelize");
@@ -295,12 +293,12 @@ const {
   CallResponseStage,
 } = require("../app/models");
 
-const { PERMISSION_MODULES, ROLE } = require("../app/constants/constant");
+const { PERMISSION_MODULES,PERMISSION_ACTIONS, ROLE } = require("../app/constants/constant");
 
 // ------------------------------------
 // Config
 // ------------------------------------
-const ALLOWED_ACTIONS = ["create", "update", "delete", "view"];
+const ALLOWED_ACTIONS = ["create", "update", "delete", "view","access"];
 const SALES_MODULES = ["Leads", "Opportunities", "Contacts", "Quotations", "Tasks"]; // tweak as needed
 
 function getAllModules() {
@@ -406,11 +404,11 @@ async function buildPermissionIdArrays(t) {
   const allIds = allPerms.map(p => p.id);
 
   const managerIds = allPerms
-    .filter(p => ALL_MODULES.includes(p.module) && ["create", "update", "view"].includes(p.action))
+    .filter(p => ALL_MODULES.includes(p.module) && ["access","create", "update", "view"].includes(p.action))
     .map(p => p.id);
 
   const salesIds = allPerms
-    .filter(p => SALES_MODULES.includes(p.module) && ["create", "update", "view"].includes(p.action))
+    .filter(p => SALES_MODULES.includes(p.module) && ["access","create", "update", "view"].includes(p.action))
     .map(p => p.id);
 
   const viewerIds = allPerms
@@ -618,7 +616,7 @@ exports.seedAdmin = async () => {
     }
 
     for (const br of branches) {
-      // console.log(br.name)
+      console.log(br.name)
       await ensureRole(br, ROLE.SUPER_ADMIN);
       await ensureRole(br, "Manager");
       // await ensureRole(br, "Sales");
@@ -644,8 +642,8 @@ exports.seedAdmin = async () => {
     }
 
     // (H) Memberships
-    for (const br of [acme.hq, globex.hq, acme.west, globex.west]) {
-      // console.log(br)
+    for (const br of [acme.hq, globex.hq,acme.west,globex.west]) {
+      console.log(br)
       const r = rolesByBranch.get(`${br.id}:${ROLE.SUPER_ADMIN}`);
       await assignUserToBranchRole({
         userId: admin.id,

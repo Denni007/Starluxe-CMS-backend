@@ -93,8 +93,8 @@ function includeMemberships(required = false, filters = {}, opts = {}) {
     where: Object.keys(where).length ? where : undefined,
     required,
     include: [
-      { model: Branch, as: "branch", attributes: ["id", "name", "type", "city", "business_id"],  include: [
-        { model: Business, as: "business", attributes: ["id", "name"] }, // ← derive business via branch
+      { model: Branch, as: "branch",  include: [
+        { model: Business, as: "business" }, // ← derive business via branch
       ]},
       roleInclude,
     ],
@@ -317,18 +317,6 @@ exports.get = async (req, res) => {
 // Make sure these are imported from your models index:
 // const { UserBranchRole, Business, Branch, Role, Permission } = require("../models");
 
-// Helper from earlier in your controller
-function groupPerms(perms = []) {
-  const map = new Map();
-  for (const p of perms) {
-    if (!map.has(p.module)) map.set(p.module, new Set());
-    map.get(p.module).add(p.action);
-  }
-  return Array.from(map.entries()).map(([module, actions]) => ({
-    module,
-    actions: Array.from(actions).sort(),
-  }));
-}
 
 exports.membershipsDetailed = async (req, res) => {
   try {
@@ -594,7 +582,6 @@ exports.patch = async (req, res) => {
   try {
     const id = Number(req.params.id);
     const b = normalizeUserBody(req.body);
-    console.log(req.body)
     // Prevent password update here
     delete b.password;
 
@@ -631,7 +618,6 @@ exports.patch = async (req, res) => {
     }
 
     fieldsToUpdate.updated_by = req.user?.id || null;
-    console.log(fieldsToUpdate);
     const [n] = await User.update(fieldsToUpdate, { where: { id } });
 
     if (!n) return res.status(404).json({ status: "false", message: "User not found" });
@@ -639,7 +625,6 @@ exports.patch = async (req, res) => {
     const user = await User.findByPk(id, { include: [includeMemberships(false)] });
     res.json({ status: "true", data: user });
   } catch (e) {
-    console.log(e);
     res.status(400).json({ status: "false", message: e.message });
   }
 };
@@ -648,7 +633,6 @@ exports.patch = async (req, res) => {
 exports.getBranchUsers = async (req, res) => {
   try {
     const userID =  req.user?.id;
-    console.log(userID);
     const branchId = Number(req.params.id );
     if (!branchId) return res.status(400).json({ status: "false", message: "branch_id required" });
 
@@ -664,7 +648,6 @@ exports.getBranchUsers = async (req, res) => {
           {
             model: Role,
             as: "role",
-            attributes: ["id", "name", "description"],
             include: [{
               model: Permission,
               as: "permissions",
@@ -675,8 +658,7 @@ exports.getBranchUsers = async (req, res) => {
           {
             model: Branch,
             as: "branch",
-            attributes: ["id", "name", "type", "city", "business_id"],
-            include: [{ model: Business, as: "business", attributes: ["id", "name"] }],
+            include: [{ model: Business, as: "business"}],
           },
         ],
       }],

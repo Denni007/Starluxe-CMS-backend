@@ -8,8 +8,10 @@ const router = express.Router();
 router.get("/", isAuth, RoleCtrl.list);
 router.get("/:id", isAuth, RoleCtrl.get);
 router.get("/branch/:id", RoleCtrl.listByBranch);
-router.post("/", isAuth, RoleCtrl.create);
-router.patch("/:id", isAuth, RoleCtrl.update);
+router.get("/branch/user/:id", RoleCtrl.listByBranchUser);
+
+router.post("/", isAuth, RoleCtrl.createWithPermissions);
+router.patch("/:id", isAuth, RoleCtrl.updateRole);
 router.delete("/:id", isAuth, RoleCtrl.remove);
 
 module.exports = router;

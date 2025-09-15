@@ -2,11 +2,7 @@
 // CommonJS + unified responses { status: "true"/"false", ... }
 
 const { Op } = require("sequelize");
-const Role = require("../models/role.js");
-const Branch = require("../models/branch.js");
-const Business = require("../models/business.js"); // for business-wise list
-const User = require("../models/user.js");
-const UserBranchRole = require("../models/UserBranchRole.js"); // for user-wise list (adjust path if needed)
+const { RolePermission, Permission, UserBranchRole, Role, Branch, Business, User } = require("../models");
 
 const sequelize = require("../models").sequelize;
 // const { Role, UserBranchRole, Branch: BranchModel } = db;
@@ -14,7 +10,7 @@ const { ROLE } = require("../constants/constant");
 const e = require("express");
 // If you have a constants file, use it; fallback to a safe default
 async function ensureRoleOnBranch({ branchId, roleName, userId, t }) {
-  const [role] = await Role.findOrCreate({
+  const [role, created] = await Role.findOrCreate({
     where: { branch_id: branchId, name: roleName },
     defaults: {
       branch_id: branchId,
@@ -24,8 +20,29 @@ async function ensureRoleOnBranch({ branchId, roleName, userId, t }) {
     },
     transaction: t,
   });
+
+  // 👇 If it's newly created, attach default permissions
+  if (created) {
+    // Get default permissions for this role
+    const defaultPerms = await Permission.findAll({
+      attributes: ["id"],
+      transaction: t,
+    });
+
+    if (defaultPerms.length) {
+      const rolePerms = defaultPerms.map(p => ({
+        role_id: role.id,
+        permission_id: p.id,
+        created_by: userId || null,
+        updated_by: userId || null,
+      }));
+      await RolePermission.bulkCreate(rolePerms, { transaction: t });
+    }
+  }
+
   return role;
 }
+
 
 async function getBranchIdsForBusiness(businessId, t) {
   const rows = await Branch.findAll({
@@ -33,7 +50,8 @@ async function getBranchIdsForBusiness(businessId, t) {
     attributes: ["id"],
     transaction: t,
   });
-  console.log(rows.map(r => r))
+  // console.log(rows.map(r => r))
+  
   return rows.map(r => r.id);
 }
 
@@ -272,12 +290,60 @@ exports.update = async (req, res) => {
 };
 
 
+
 exports.remove = async (req, res) => {
+  const branchId = req.params.id;
+
   try {
-    const count = await Branch.destroy({ where: { id: req.params.id } });
-    if (count === 0) return res.status(404).json({ status: "false", message: "Branch not found" });
-    res.json({ status: "true", deleted: count });
+    const result = await sequelize.transaction(async (t) => {
+      // 1) Find the branch
+      const branch = await Branch.findByPk(branchId, { transaction: t });
+      if (!branch) {
+        const err = new Error("Branch not found");
+        err.statusCode = 404;
+        throw err;
+      }
+
+      // 2) Find all roles for this branch
+      const roles = await Role.findAll({
+        where: { branch_id: branchId },
+        transaction: t,
+      });
+      const roleIds = roles.map((r) => r.id);
+
+      if (roleIds.length) {
+        // 2a) Delete role_permissions for these roles
+        await RolePermission.destroy({
+          where: { role_id: roleIds },
+          transaction: t,
+        });
+
+        // 2b) Delete roles themselves
+        await Role.destroy({
+          where: { id: roleIds },
+          transaction: t,
+        });
+      }
+
+      // 3) Delete user-branch-role memberships
+      await UserBranchRole.destroy({
+        where: { branch_id: branchId },
+        transaction: t,
+      });
+
+      // 4) (Optional) If you want to remove branch-scoped permissions too
+      // await Permission.destroy({ where: { branch_id: branchId }, transaction: t });
+
+      // 5) Finally delete the branch
+      await branch.destroy({ transaction: t });
+
+      return { deleted: true };
+    });
+
+    return res.json({ status: "true", message: "Branch and related data removed", ...result });
   } catch (e) {
-    res.status(400).json({ status: "false", message: e.message });
+    console.error("❌ branch.remove error:", e);
+    const code = e.statusCode || 400;
+    return res.status(code).json({ status: "false", message: e.message });
   }
 };

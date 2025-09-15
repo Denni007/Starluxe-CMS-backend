@@ -43,8 +43,8 @@ function includeMemberships(required = false, filters = {}, opts = {}) {
     where: Object.keys(where).length ? where : undefined,
     required,
     include: [
-      { model: Branch, as: "branch", attributes: ["id", "name", "type", "city", "business_id"],  include: [
-        { model: Business, as: "business", attributes: ["id", "name"] }, // ← derive business via branch
+      { model: Branch, as: "branch",  include: [
+        { model: Business, as: "business" }, // ← derive business via branch
       ]},
       roleInclude,
     ],
@@ -60,15 +60,15 @@ exports.membershipsDetailed = async (req, res) => {
         {
           model: Branch,
           as: "branch",
-          attributes: ["id", "name", "type", "city", "business_id"],
+         
           include: [
-            { model: Business, as: "business", attributes: ["id", "name"] }, // ← derive business via branch
+            { model: Business, as: "business",  }, // ← derive business via branch
           ],
         },
         {
           model: Role,
           as: "role",
-          attributes: ["id", "name", "description", "branch_id"],
+         
           include: [
             {
               model: Permission,

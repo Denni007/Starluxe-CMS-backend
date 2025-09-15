@@ -15,18 +15,20 @@ exports.PERMISSION_ACTIONS = {
 exports.PERMISSION_MODULES = {
     Leads:"Leads",
     Opportunities:"Opportunities",
-    Items:"Items",
-    Quotations:"Quotations",
-    Contacts:"Contacts",
+    // Items:"Items",
+   // Quotations:"Quotations",
+    // Contacts:"Contacts",
     Tasks:"Tasks",
     Reminders:"Reminders",
-    Employee:"Employee",
+    // Employee:"Employee",
     Reports:"Reports",
     Settings:"Settings",
     Business:"Business",
+    Dashboard:"Dashboard",
     Branches:"Branches",
     Users:"Users",
     Roles:"Roles",
+    
     Permissions:"Permissions"
 }
 

@@ -10,6 +10,8 @@ router.get("", Ctrl.list);
 router.get("/user/:userId", Ctrl.listByUser);
 router.get("/:id", Ctrl.get);
 router.put("/:id", Ctrl.update);
+router.patch("/:id", Ctrl.updateRole);
+
 router.put("/bulk", Ctrl.bulkUpdate);
 router.delete("/:id", Ctrl.remove);
 router.delete("/bulk", Ctrl.bulkRemove);

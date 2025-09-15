@@ -8,7 +8,7 @@ const router = express.Router();
 router.post("/", LeadSourceCtrl.create);
 router.get("/", LeadSourceCtrl.list);
 router.get("/:id", LeadSourceCtrl.get);
-router.put("/:id", LeadSourceCtrl.update);
+router.patch("/:id", LeadSourceCtrl.update);
 router.delete("/:id", LeadSourceCtrl.remove);
 
 module.exports = router;

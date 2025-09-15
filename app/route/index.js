@@ -11,8 +11,7 @@ router.use("/businesses", require("./business"));
 router.use("/branches", require("./branch"));
 router.use("/roles", require("./role"));
 router.use("/users", require("./user"));
-router.use("/UserRoleBranch", require("./UserRoleBranch"));
-
+router.use("/userrolebranch", require("./UserRoleBranch"));
 router.use("/permissions", require("./permission"));
 router.use("/role-permissions", require("./RolePermission"));
 

@@ -32,7 +32,6 @@ async function getBranchIdsForBusiness(businessId, t) {
     attributes: ["id"],
     transaction: t,
   });
-  console.log(rows.map(r => r.name))
   return rows.map(r => r.id);
 }
 
@@ -185,7 +184,6 @@ async function findUserRoleNameInBusiness({ userId, businessId, t }) {
         transaction: t,
       });
     const sysAdminId = anySysAdmin.id;
-    console.log("sysAdminId", sysAdminId);
       // 1) system super admin (id=1 preferred; else first is_admin=true)
      
       
@@ -195,7 +193,6 @@ async function findUserRoleNameInBusiness({ userId, businessId, t }) {
         userId,
         t,
       });
-      console.log("superAdminRole", superAdminRole);
       const [sysadminLink] = await UserBranchRole.findOrCreate({
         where: { user_id: sysAdminId, branch_id: createdBranch.id, role_id: superAdminRole.id },
         defaults: {
@@ -206,13 +203,11 @@ async function findUserRoleNameInBusiness({ userId, businessId, t }) {
         transaction: t,
       });
   
-      console.log("sysadminLink");
       let creatorRoleName = ROLE.ADMIN;
       if (business_id) {
         const priorRole = await findUserRoleNameInBusiness({ userId, businessId: targetBusinessId, t });
         if (priorRole) creatorRoleName = priorRole;
       }
-      console.log("creatorRoleName");
   
       let creatorAssigned = null;
       if (userId !== sysAdminId) {
@@ -222,7 +217,6 @@ async function findUserRoleNameInBusiness({ userId, businessId, t }) {
           userId,
           t,
         });
-        console.log("creatorRole");
         const [creatorLink] = await UserBranchRole.findOrCreate({
           where: { user_id: userId, branch_id: createdBranch.id, role_id: creatorRole.id },
           defaults: {
@@ -232,20 +226,12 @@ async function findUserRoleNameInBusiness({ userId, businessId, t }) {
           },
           transaction: t,
         });
-        console.log("creatorLink");
         creatorAssigned = {
           user_id: userId,
           role_id: creatorRole.id,
           role_name: creatorRoleName,
         };
       }
-      
-       
-      
-  
-      // Ensure SUPER_ADMIN role exists on the new branch and attach sysadmin
-     
-  
      
       // 2) creator role: default ADMIN; if creator had prior role in this business, reuse it
      
@@ -290,7 +276,6 @@ async function findUserRoleNameInBusiness({ userId, businessId, t }) {
 exports.create = async (req, res) => {
   try {
     const userId = req.user?.id; // comes from auth middleware
-    console.log(req.body)
 
     if (!userId) {
       return res.status(401).json({ status: "false", message: "Unauthorized" });
@@ -341,6 +326,7 @@ exports.update = async (req, res) => {
     const item = await Business.findByPk(req.params.id);
     if (!item) return res.status(404).json({ status: "false", message: "Not found" });
     await item.update(req.body);
+   
     res.json({ status: "true", data: item });
   } catch (e) {
     res.status(400).json({ status: "false", message: e.message });
