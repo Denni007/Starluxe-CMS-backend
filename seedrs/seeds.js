@@ -294,6 +294,9 @@ const {
 } = require("../app/models");
 
 const { PERMISSION_MODULES,PERMISSION_ACTIONS, ROLE } = require("../app/constants/constant");
+const LeadType = require("../app/models/LeadType");
+const CustomerType = require("../app/models/CustomerType");
+const Products = require("../app/models/Products");
 
 // ------------------------------------
 // Config
@@ -689,24 +692,109 @@ exports.seedAdmin = async () => {
     for (const name of leadSources) {
       await LeadSource.findOrCreate({ where: { name }, defaults: { name, description: name }, transaction: t });
     }
-
+    const products = [
+      {
+        "category": "60ft New",
+        "price":200,
+        "name": "UPVC PIPE"
+      }];
+      for (const name of products) {
+        await Products.findOrCreate({ where: { name: name.name }, defaults: { name:name.name, category: name.category, price: name.price, }, transaction: t });
+      }
     const leadStages = [
-      "NEW",
-      "ASSIGNED",
-      "CONTACT IN FUTURE",
-      "IN PROCESS",
-      "CONVERTED",
-      "DEAD",
-      "REFERENCE"
+      {
+        "color": "#3498DB",
+        "name": "New"
+      },
+      {
+        "color": "#1ABC9C",
+        "name": "Open"
+      },
+      {
+        "color": "#9B59B6",
+        "name": "InProgress"
+      },
+      {
+        "color": "#F39C12",
+        "name": "AttemptedToContact"
+      },
+      {
+        "color": "#16A085",
+        "name": "OpenDeal"
+      },
+      {
+        "color": "#27AE60",
+        "name": "Converted"
+      },
+      {
+        "color": "#7F8C8D",
+        "name": "Unqualified"
+      },
+      {
+        "color": "#2ECC71",
+        "name": "Connected"
+      },
+      {
+        "color": "#34495E",
+        "name": "Closed"
+      },
+      {
+        "color": "#2980B9",
+        "name": "Won"
+      },
+      {
+        "color": "#E74C3C",
+        "name": "Lost"
+      },
+      {
+        "color": "#D35400",
+        "name": "BadTiming"
+      },
+      {
+        "color": "#8E44AD",
+        "name": "Reference"
+      }
     ];
-    for (const name of leadStages) {
-      await LeadStage.findOrCreate({ where: { name }, defaults: { name, description: name }, transaction: t });
+  
+      for (const [i, stage] of leadStages.entries()) {
+      
+         await LeadStage.findOrCreate({ where: { name:stage.name }, defaults: { name:stage.name, description: stage.name, order: i + 1,color:stage.color }, transaction: t });
+      }
+    // const leadStages = [
+    //   "NEW",
+    //   "ASSIGNED",
+    //   "CONTACT IN FUTURE",
+    //   "IN PROCESS",
+    //   "CONVERTED",
+    //   "DEAD",
+    //   "REFERENCE"
+    // ];
+    // for (const name of leadStages) {
+    //   await LeadStage.findOrCreate({ where: { name }, defaults: { name, description: name }, transaction: t });
+    // }
+    const leadType= [
+      "Hot",
+      "Cold",
+      "Warm"
+    ];
+    for (const name of leadType) {
+      await LeadType.findOrCreate({ where: { name }, defaults: { name, description: name }, transaction: t });
     }
+    const customerType = [ 'Distributor','Retailer','Channel Partner','Borwell','End User',]
 
+    
+    for (const name of customerType) {
+      await CustomerType.findOrCreate({ where: { name }, defaults: { name, description: name }, transaction: t });
+    }
     const [webSource] = await LeadSource.findOrCreate({ where: { name: "Website" }, transaction: t });
     const [referralSource] = await LeadSource.findOrCreate({ where: { name: "Referral" }, transaction: t });
-    const [newStage] = await LeadStage.findOrCreate({ where: { name: "NEW" }, transaction: t });
-    const [inProcessStage] = await LeadStage.findOrCreate({ where: { name: "IN PROCESS" }, transaction: t });
+    const [newStage] = await LeadStage.findOrCreate({ where: { name: "New" }, transaction: t });
+    const [inProcessStage] = await LeadStage.findOrCreate({ where: { name: "InProgress" }, transaction: t });
+    const [Hot] = await LeadType.findOrCreate({ where: { name: "Hot" }, transaction: t });
+    const [Warm] = await LeadType.findOrCreate({ where: { name: "Warm" }, transaction: t });
+    const [Distributor] = await CustomerType.findOrCreate({ where: { name: "Distributor" }, transaction: t });
+    const [Retailer] = await CustomerType.findOrCreate({ where: { name: "Retailer" }, transaction: t });
+    const [PVC] = await CustomerType.findOrCreate({ where: { name: "UPVC PIPE" }, transaction: t });
 
     // (J) Tasks Stages
     const taskStages = [
@@ -729,7 +817,7 @@ exports.seedAdmin = async () => {
     const { hq: globexHq } = globex;
 // Create some leads (destructure the returned instance)
 const [lead1] = await Lead.findOrCreate({
-  where: { lead_name: "John Doe" },
+  where: { lead_name: "John new" },
   defaults: {
     lead_name: "John new",
     lead_stage_id: newStage.id,
@@ -737,8 +825,8 @@ const [lead1] = await Lead.findOrCreate({
     branch_id: acmeHq.id,
     contact_number: ["+919876543210"],
     email: ["john.doe@example.com"],
-    lead_type: "Hot",
-    customer_type: "Distributor",
+    lead_type_id: Hot.id,
+    customer_type_id:Retailer.id,
     tags: ["high-value", "new-channel"],
     description: "Interested in new software.",
     assigned_user: manager.id,
@@ -759,8 +847,8 @@ const [lead2] = await Lead.findOrCreate({
     branch_id: globexHq.id,
     contact_number: ["+15551234567"],
     email: ["jane.smith@example.com"],
-    lead_type: "Business",
-    customer_type: "Distributor",
+    lead_type_id: Warm.id,
+    customer_type_id: Distributor.id,
     tags: ["high-value", "new-channel"],
     description: "Looking for a partnership opportunity.",
     assigned_user: manager.id,
@@ -781,8 +869,8 @@ const [lead3] = await Lead.findOrCreate({
     branch_id: acmeWest.id,
     contact_number: ["+15559876543"],
     email: ["test.lead@example.com"],
-    lead_type: "Individual",
-    customer_type: "Distributor",
+    lead_type_id:Warm.id,
+    customer_type_id: Distributor.id,
     tags: ["high-value", "new-channel"],
     description: "Lead for West branch.",
     assigned_user: null,

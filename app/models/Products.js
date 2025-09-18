@@ -1,8 +1,8 @@
-// app/models/LeadStage.js
+// app/models/LeadType.js
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/index");
 
-const LeadStage = sequelize.define("LeadStage", {
+const Products = sequelize.define("Products", {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
@@ -13,24 +13,24 @@ const LeadStage = sequelize.define("LeadStage", {
     type: DataTypes.STRING,
     allowNull: false, 
   },
-
-  order: {
-    type: DataTypes.NUMBER,
-    allowNull: true, 
-  },
-  color: {
+  category: {
     type: DataTypes.STRING,
-    allowNull: true,
+    allowNull: false, 
   },
+  price: {
+    type: DataTypes.NUMBER,
+    allowNull: false, 
+  },
+
   description: {
     type: DataTypes.STRING,
     allowNull: true,
   },
 }, {
-  tableName: "lead_stages",
+  tableName: "products",
   timestamps: true,
   createdAt: "created_at",
   updatedAt: "updated_at",
 });
 
-module.exports = LeadStage;
+module.exports = Products;

@@ -10,12 +10,15 @@ const UserBranchRole = require("./UserBranchRole");
 const RolePermission = require("./RolePermission");
 const LeadSource = require("./LeadSource");
 const LeadStage = require("./LeadStage");
+const LeadType = require("./LeadType");
+const CustomerType = require("./CustomerType");
 const Lead = require("./lead");
 const TaskStage = require("./TaskStage");
 const Task = require("./task");
 const Reminder = require("./reminder");
 const CallResponseStage = require("./CallResponseStage");
 const Call = require("./call");
+const Products = require("./Products");
 
 
 
@@ -25,6 +28,15 @@ LeadSource.hasMany(Lead, { foreignKey: "lead_source_id", as: "leads" });
 
 Lead.belongsTo(LeadStage, { foreignKey: "lead_stage_id", as: "stage" });
 LeadStage.hasMany(Lead, { foreignKey: "lead_stage_id", as: "leads" });
+
+Lead.belongsTo(LeadType, { foreignKey: "lead_type_id", as: "type" });
+LeadType.hasMany(Lead, { foreignKey: "lead_type_id", as: "leads" });
+
+Lead.belongsTo(CustomerType , { foreignKey: "customer_type_id", as: "customerType" });
+CustomerType.hasMany(Lead, { foreignKey: "customer_type_id", as: "leads" });
+
+Lead.belongsTo(Products , { foreignKey: "product_id", as: "products" });
+Products.hasMany(Lead, { foreignKey: "product_id", as: "leads", });
 
 Lead.belongsTo(User, { foreignKey: "assigned_user", as: "assignee" });
 User.hasMany(Lead, { foreignKey: "assigned_user", as: "leads" });

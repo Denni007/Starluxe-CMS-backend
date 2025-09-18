@@ -1,10 +1,10 @@
-// app/controller/LeadStage.controller.js
-const LeadStage = require("../models/LeadStage.js");
+// app/controller/Products.controller.js
+const Products = require("../models/Products.js");
 
 
 exports.list = async (req, res) => {
   try {
-    const items = await LeadStage.findAll({
+    const items = await Products.findAll({
       order: [["name", "ASC"]],
     });
     res.json({ status: "true", data: items });
@@ -16,9 +16,9 @@ exports.list = async (req, res) => {
 
 exports.get = async (req, res) => {
   try {
-    const item = await LeadStage.findByPk(req.params.id);
+    const item = await Products.findByPk(req.params.id);
     if (!item) {
-      return res.status(404).json({ status: "false", message: "LeadStage not found" });
+      return res.status(404).json({ status: "false", message: "Products not found" });
     }
     res.json({ status: "true", data: item });
   } catch (e) {
@@ -30,12 +30,13 @@ exports.get = async (req, res) => {
 exports.create = async (req, res) => {
   try {
     const payload = req.body;
+    console.log(payload);
     let items;
 
     if (Array.isArray(payload)) {
-      items = await LeadStage.bulkCreate(payload, { validate: true });
+      items = await Products.bulkCreate(payload, { validate: true });
     } else {
-      items = await LeadStage.create(payload);
+      items = await Products.create(payload);
     }
 
     res.status(200).json({ status: "true", data: items });
@@ -48,17 +49,17 @@ exports.create = async (req, res) => {
 
 exports.update = async (req, res) => {
   try {
-    const { name,color ,description,order} = req.body;
-    const item = await LeadStage.findByPk(req.params.id);
+    const { name,description,category,price} = req.body;
+    const item = await Products.findByPk(req.params.id);
 
     if (!item) {
-      return res.status(404).json({ status: "false", message: "LeadStage not found" });
+      return res.status(404).json({ status: "false", message: "Products not found" });
     }
 
     item.name = name || item.name;
-    item.color = color || item.color;
-    item.description = description || item.description;
-    item.order = order || item.order;
+    item.price = price || item.price;
+    item.category = category || item.category;
+    item.description = description || item.description; 
     await item.save();
 
     res.json({ status: "true", data: item });
@@ -70,14 +71,14 @@ exports.update = async (req, res) => {
 
 exports.remove = async (req, res) => {
   try {
-    const item = await LeadStage.findByPk(req.params.id);
+    const item = await Products.findByPk(req.params.id);
 
     if (!item) {
-      return res.status(404).json({ status: "false", message: "LeadStage not found" });
+      return res.status(404).json({ status: "false", message: "Products not found" });
     }
 
     await item.destroy();
-    res.json({ status: "true", message: "LeadStage deleted successfully" });
+    res.json({ status: "true", message: "Products deleted successfully" });
   } catch (e) {
     res.status(400).json({ status: "false", message: e.message });
   }

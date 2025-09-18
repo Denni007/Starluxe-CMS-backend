@@ -17,14 +17,8 @@ const Lead = sequelize.define("Lead", {
     email: { type: DataTypes.JSON, allowNull: true },
     tags: { type: DataTypes.JSON, allowNull: true },
 
-    customer_type: {
-        type: DataTypes.ENUM("OFFICE", "WAREHOUSE", "SHOP"),
-        allowNull: true, defaultValue: "OFFICE",
-      },
-    lead_type: {
-        type: DataTypes.ENUM("OFFICE", "WAREHOUSE", "SHOP"),
-        allowNull: true, defaultValue: "OFFICE",
-      },
+    customer_type_id: { type: DataTypes.INTEGER, allowNull: false },
+    lead_type_id:  { type: DataTypes.INTEGER, allowNull: false },
     remark: { type: DataTypes.TEXT, allowNull: true },
     description: { type: DataTypes.TEXT, allowNull: true },
 
@@ -36,6 +30,8 @@ const Lead = sequelize.define("Lead", {
     location: { type: DataTypes.INTEGER, allowNull: true },
     alias: { type: DataTypes.STRING, allowNull: true },
     product_name: { type: DataTypes.STRING, allowNull: true },
+    product_id: { type: DataTypes.INTEGER, allowNull: true },
+
     amount: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
 
     // Dates
