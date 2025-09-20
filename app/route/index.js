@@ -19,7 +19,7 @@ router.use("/lead-source", require("./LeadSource"));
 router.use("/lead-stage", require("./LeadStage"));
 router.use("/lead-type", require("./LeadType"));
 router.use("/customer-type", require("./CustomerType"));
-router.use("/products", require("./Products"));
+router.use("/products", require("./product"));
 router.use("/leads", require("./lead"));
 
 router.use("/task-stage", require("./TaskStage"));

@@ -1,17 +1,10 @@
-// const Business = require("../models/business");
-// const Branch = require("../models/branch");
-// const UserBranchRole = require("../models/UserBranchRole");
-// const Role = require("../models/role");
-// const Permission = require("../models/permission");
-// const RolePermission = require("../models/RolePermission");
 const { Op } = require("sequelize");
 
 const sequelize = require("../models").sequelize;
-// const { Role, UserBranchRole, Branch: BranchModel } = db;
 const { ROLE } = require("../constants/constant");
 const { User,UserBranchRole,Role,Permission,RolePermission,Business,Branch } = require("../models");
-const e = require("express");
-// If you have a constants file, use it; fallback to a safe default
+
+
 async function ensureRoleOnBranch({ branchId, roleName, userId, t }) {
   const [role] = await Role.findOrCreate({
     where: { branch_id: branchId, name: roleName },

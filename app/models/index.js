@@ -18,7 +18,7 @@ const Task = require("./task");
 const Reminder = require("./reminder");
 const CallResponseStage = require("./CallResponseStage");
 const Call = require("./call");
-const Products = require("./Products");
+const Products = require("./product");
 
 
 
@@ -161,11 +161,14 @@ module.exports = {
   Lead,
   LeadStage,
   LeadSource,
+  LeadType,
+  CustomerType,
   Task,
   TaskStage,
   Reminder,
   CallResponseStage,
-  Call
+  Call,
+  Products
 };
 
 

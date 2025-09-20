@@ -1,7 +1,7 @@
 // app/routes/industry.routes.js
 const express = require("express");
 const { isAuth } = require("../middleware/utill.js");
-const ProductsCtrl = require("../controller/Products.js");
+const ProductsCtrl = require("../controller/product.js");
 
 const router = express.Router();
 

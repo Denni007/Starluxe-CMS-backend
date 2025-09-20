@@ -1,17 +1,17 @@
 // app/routes/business.routes.js
 const express = require("express");
 const BusinessCtrl = require("../controller/business.js");
-const { isAuth } = require("../middleware/utill.js");
+const { isAuth, isPermission } = require("../middleware/utill.js");
 
 const router = express.Router();
 
 // CRUD for businesses
-router.get("/", isAuth, BusinessCtrl.list);
-router.get("/:id", isAuth, BusinessCtrl.get);
-router.post("/", isAuth, BusinessCtrl.create);
-router.post("/business-branch", isAuth, BusinessCtrl.createBusinessWithBranch);
-router.patch("/:id", isAuth, BusinessCtrl.update);
-router.delete("/:id", isAuth, BusinessCtrl.remove);
+router.get("/", isAuth, isPermission, BusinessCtrl.list);
+router.get("/:id", isAuth, isPermission, BusinessCtrl.get);
+router.post("/", isAuth, isPermission, BusinessCtrl.create);
+router.post("/business-branch", isAuth, isPermission, BusinessCtrl.createBusinessWithBranch);
+router.patch("/:id", isAuth, isPermission, BusinessCtrl.update);
+router.delete("/:id", isAuth, isPermission, BusinessCtrl.remove);
 
 module.exports = router;
 

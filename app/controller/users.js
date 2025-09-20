@@ -80,9 +80,9 @@ function includeMemberships(required = false, filters = {}, opts = {}) {
     roleInclude.include = [
       {
         model: Permission,
-        as: "permissions",                  // <-- requires Role.belongsToMany(Permission, { as: "permissions", through: ... })
+        as: "permissions",
         attributes: ["id", "module", "action"],
-        through: { attributes: [] },        // hide join table fields
+        through: { attributes: [] }, // hide join table fields
       },
     ];
   }
@@ -93,9 +93,11 @@ function includeMemberships(required = false, filters = {}, opts = {}) {
     where: Object.keys(where).length ? where : undefined,
     required,
     include: [
-      { model: Branch, as: "branch",  include: [
-        { model: Business, as: "business" }, // ← derive business via branch
-      ]},
+      {
+        model: Branch,
+        as: "branch",
+        include: [{ model: Business, as: "business" }], // ← derive business via branch
+      },
       roleInclude,
     ],
   };
@@ -283,11 +285,11 @@ exports.list = async (req, res) => {
 };
 
 /**
- * GET /users/:id
+ * GET /users/me
  */
 exports.get = async (req, res) => {
   try {
-    const userID =  req.user?.id || req.params.id;
+    const userID = req.user?.id || req.params.id;
     const user = await User.findByPk(userID, {
       include: [includeMemberships(false, {}, { withPermissions: true })],
     });
@@ -299,8 +301,14 @@ exports.get = async (req, res) => {
     if (Array.isArray(data.memberships)) {
       data.memberships = data.memberships.map((m) => {
         const perms = m?.role?.permissions || [];
+        // Extract only the IDs from the permissions array
+        const permissionIds = perms.map(p => p.id);
         return {
           ...m,
+          role: {
+            ...m.role,
+            permissions: permissionIds,
+          },
           role_permission_matrix: groupPerms(perms),
         };
       });
@@ -311,6 +319,8 @@ exports.get = async (req, res) => {
     res.status(400).json({ status: "false", message: e.message });
   }
 };
+
+
 
 // ⬇️ OPTIONAL: memberships-only with permissions
 // GET /users/:id/memberships/detailed
@@ -337,14 +347,6 @@ exports.membershipsDetailed = async (req, res) => {
           model: Role,
           as: "role",
           attributes: ["id", "name", "description", "branch_id"],
-          include: [
-            {
-              model: Permission,
-              as: "permissions",
-              attributes: ["id", "module", "action"],
-              through: { attributes: [] },
-            },
-          ],
         },
       ],
       order: [["id", "DESC"]],
