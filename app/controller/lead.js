@@ -3,6 +3,9 @@ const Lead = require("../models/lead.js");
 const User = require("../models/user.js");
 const LeadStage = require("../models/LeadStage.js");
 const LeadSource = require("../models/LeadSource.js");
+const LeadType = require("../models/LeadType.js");
+const CustomerType = require("../models/CustomerType.js");
+const Products = require("../models/Products.js");
 
 function mapLeadPayload(leadInstance) {
   // toJSON to get plain object
@@ -14,6 +17,8 @@ function mapLeadPayload(leadInstance) {
       id: obj.assignee.id,
       user_name: obj.assignee.user_name,
       email: obj.assignee.email,
+      first_name: obj.assignee.first_name,
+      last_name: obj.assignee.last_name,
     };
   } else {
     // leave assigned_user as-is (scalar) if no relation loaded/found
@@ -43,6 +48,33 @@ function mapLeadPayload(leadInstance) {
   }
   delete obj.source;
 
+  if(obj.type ){
+    obj.lead_type_id = {
+      id: obj.type.id,
+      name: obj.type.name
+  };
+  }
+  else{
+    // keep scalar value
+  }
+  if(obj.customerType){
+    obj.customer_type_id = {
+      id: obj.customerType.id,
+      name: obj.customerType.name
+  };}
+  else{
+    // keep scalar value
+  }
+  if(obj.products){
+    obj.product_id = {
+      id: obj.products.id,
+      name: obj.products.name,
+      category: obj.products.category,
+      price: obj.products.price
+  };}
+  else{
+    // keep scalar valueg
+  }
   return obj;
 }
 
@@ -79,6 +111,18 @@ exports.getById = async (req, res) => {
           model: LeadSource,
           as: "source",
         },
+        {
+          model: LeadType,
+          as: "type",
+        },
+        {
+          model: CustomerType,
+          as: "customerType",
+        },
+        {
+          model: Products,
+          as: "products",
+        }
       ],
     });
 
@@ -95,20 +139,24 @@ exports.getById = async (req, res) => {
 exports.listByBranch = async (req, res) => {
   try {
     const { id } = req.params;
-
+    console.log(id)
     const items = await Lead.findAll({
       where: { branch_id: id },
       order: [["id", "DESC"]],
       include: [
-        { model: User, as: "assignee", attributes: ["id", "user_name", "email"] },
+        { model: User, as: "assignee", attributes: ["id", "user_name", "email", "first_name","last_name"] },
         { model: LeadStage, as: "stage", attributes: ["id", "name"] },
         { model: LeadSource, as: "source", attributes: ["id", "name"] },
+        { model: LeadType, as: "type", attributes: ["id", "name"] },
+        { model: CustomerType, as: "customerType", attributes: ["id", "name"] },
+        { model: Products, as: "products", attributes: ["id", "name","category","price"] },
+    
       ],
     });
 
     // items is an array — map each element
     const mapped = (items || []).map(mapLeadPayload);
-
+    console.log(mapped)
     res.json({ status: "true", data: mapped });
   } catch (e) {
     console.error("Lead listByBranch error:", e);
@@ -124,9 +172,12 @@ exports.listByUser = async (req, res) => {
       where: { assigned_user: id },
       order: [["id", "DESC"]],
       include: [
-        { model: User, as: "assignee", attributes: ["id", "user_name", "email"] },
+        { model: User, as: "assignee", attributes: ["id", "user_name", "email","first_name","last_name"] },
         { model: LeadStage, as: "stage", attributes: ["id", "name"] },
         { model: LeadSource, as: "source", attributes: ["id", "name"] },
+        { model: LeadType, as: "type", attributes: ["id", "name"] },
+        { model: CustomerType, as: "customerType", attributes: ["id", "name"] },
+        {model:Products,as:"products",attributes:["id","name","category","price"]}
       ],
     });
 
