@@ -19,6 +19,7 @@ const Reminder = require("./reminder");
 const CallResponseStage = require("./CallResponseStage");
 const Call = require("./call");
 const Products = require("./product");
+const LeadActivityLog = require("./LeadActivityLog");
 
 
 
@@ -32,14 +33,23 @@ LeadStage.hasMany(Lead, { foreignKey: "lead_stage_id", as: "leads" });
 Lead.belongsTo(LeadType, { foreignKey: "lead_type_id", as: "type" });
 LeadType.hasMany(Lead, { foreignKey: "lead_type_id", as: "leads" });
 
-Lead.belongsTo(CustomerType , { foreignKey: "customer_type_id", as: "customerType" });
+Lead.belongsTo(CustomerType, { foreignKey: "customer_type_id", as: "customerType" });
 CustomerType.hasMany(Lead, { foreignKey: "customer_type_id", as: "leads" });
 
-Lead.belongsTo(Products , { foreignKey: "product_id", as: "products" });
+Lead.belongsTo(Products, { foreignKey: "product_id", as: "products" });
 Products.hasMany(Lead, { foreignKey: "product_id", as: "leads", });
 
 Lead.belongsTo(User, { foreignKey: "assigned_user", as: "assignee" });
 User.hasMany(Lead, { foreignKey: "assigned_user", as: "leads" });
+
+
+// LeadActivityLog belongs to a Lead, User
+LeadActivityLog.belongsTo(Lead, { foreignKey: 'lead_id', as: 'lead' });
+User.hasMany(LeadActivityLog, { foreignKey: 'user_id', as: 'leadActivities' });
+
+LeadActivityLog.belongsTo(User, { foreignKey: 'user_id', as: 'changer' });
+Lead.hasMany(LeadActivityLog, { foreignKey: 'lead_id', as: 'activities' });
+
 
 // tasks ↔ TaskStage, User, Lead, Reminder
 Task.belongsTo(TaskStage, { foreignKey: "task_stage_id", as: "stage" });

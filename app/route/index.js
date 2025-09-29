@@ -21,6 +21,7 @@ router.use("/lead-type", require("./LeadType"));
 router.use("/customer-type", require("./CustomerType"));
 router.use("/products", require("./product"));
 router.use("/leads", require("./lead"));
+router.use("/lead-activity-log", require("./LeadActivityLog"));
 
 router.use("/task-stage", require("./TaskStage"));
 router.use("/tasks", require("./task"));

@@ -21,17 +21,15 @@ const Lead = sequelize.define("Lead", {
     lead_type_id:  { type: DataTypes.INTEGER, allowNull: false },
     remark: { type: DataTypes.TEXT, allowNull: true },
     description: { type: DataTypes.TEXT, allowNull: true },
-
     assigned_user: { type: DataTypes.INTEGER, allowNull: true },
 
     // Lead details
     business_name: { type: DataTypes.STRING, allowNull: true },
     website: { type: DataTypes.STRING, allowNull: true },
-    location: { type: DataTypes.INTEGER, allowNull: true },
+    location: { type: DataTypes.STRING, allowNull: true },
     alias: { type: DataTypes.STRING, allowNull: true },
     product_name: { type: DataTypes.STRING, allowNull: true },
     product_id: { type: DataTypes.INTEGER, allowNull: true },
-
     amount: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
 
     // Dates
