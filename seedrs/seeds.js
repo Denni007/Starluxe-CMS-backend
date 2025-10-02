@@ -712,15 +712,7 @@ exports.seedAdmin = async () => {
     for (const name of leadSources) {
       await LeadSource.findOrCreate({ where: { name }, defaults: { name, description: name }, transaction: t });
     }
-    const products = [
-      {
-        "category": "60ft New",
-        "price":200,
-        "name": "UPVC PIPE"
-      }];
-      for (const name of products) {
-        await Products.findOrCreate({ where: { name: name.name }, defaults: { name:name.name, category: name.category, price: name.price, }, transaction: t });
-      }
+    
     const leadStages = [
       {
         "color": "#3498DB",

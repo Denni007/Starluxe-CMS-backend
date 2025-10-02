@@ -20,6 +20,7 @@ const CallResponseStage = require("./CallResponseStage");
 const Call = require("./call");
 const Products = require("./product");
 const LeadActivityLog = require("./LeadActivityLog");
+const ProductCategory = require("./ProductCategory");
 
 
 
@@ -41,6 +42,15 @@ Products.hasMany(Lead, { foreignKey: "product_id", as: "leads", });
 
 Lead.belongsTo(User, { foreignKey: "assigned_user", as: "assignee" });
 User.hasMany(Lead, { foreignKey: "assigned_user", as: "leads" });
+
+// ProductCategory ↔ Business, Products
+ProductCategory.belongsTo(Business, { foreignKey: 'business_id', as: 'business' });
+Business.hasMany(ProductCategory, { foreignKey: 'business_id', as: 'productCategories' });
+
+Products.belongsTo(ProductCategory, { foreignKey: 'category_id', as: 'category' });
+ProductCategory.hasMany(Products, { foreignKey: 'category_id', as: 'products' });
+
+
 
 
 // LeadActivityLog belongs to a Lead, User

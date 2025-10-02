@@ -1,37 +1,31 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/index");
 
-const Products = sequelize.define("Products", {
+const ProductCategory = sequelize.define("ProductCategory", {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
   },
-  name: {
-    type: DataTypes.STRING,
-    allowNull: false, 
-  },
   business_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
-  category_id: {
-    type: DataTypes.INTEGER,
-    allowNull: false, 
+  name: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true,
   },
-  price: {
-    type: DataTypes.DECIMAL(10, 2),
-    allowNull: false, 
-  },
+
   description: {
     type: DataTypes.STRING,
     allowNull: true,
   },
 }, {
-  tableName: "products",
+  tableName: "product_categories",
   timestamps: true,
   createdAt: "created_at",
   updatedAt: "updated_at",
 });
 
-module.exports = Products;
+module.exports = ProductCategory;
