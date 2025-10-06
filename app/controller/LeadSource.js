@@ -73,9 +73,27 @@ exports.remove = async (req, res) => {
       return res.status(404).json({ status: "false", message: "LeadSource not found" });
     }
 
-    await item.destroy();
-    res.json({ status: "true", message: "LeadSource deleted successfully" });
+    try {
+      await item.destroy();
+      res.json({ status: "true", message: "LeadSource deleted successfully" });
+    } catch (dbError) {
+
+      if (dbError.name === 'SequelizeForeignKeyConstraintError' ||
+        (dbError.original && (dbError.original.code === 'ER_ROW_IS_REFERENCED' || dbError.original.errno === 1451))) {
+
+        const message = "Cannot delete this Lead Source because it is currently linked to one or more Leads. Please update or delete the linked Leads first.";
+
+        return res.status(409).json({ 
+          status: "false",
+          message: message,
+          error_type: "ForeignKeyConstraintError" 
+        });
+      }
+      throw dbError;
+    }
+
   } catch (e) {
+    console.error("LeadSource remove error:", e.message);
     res.status(400).json({ status: "false", message: e.message });
   }
 };

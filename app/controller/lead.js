@@ -50,7 +50,7 @@ function mapLeadPayload(leadInstance) {
     delete obj.products;
 
     // Remove raw summary field from any old log data if this function is used on logs (for safety)
-    delete obj.activities; 
+    delete obj.activities;
 
     return obj;
 }
@@ -155,7 +155,7 @@ exports.create = async (req, res) => {
         const {
             lead_name, lead_stage_id, lead_source_id, branch_id, contact_number, email,
             lead_type_id, remark, description, assigned_user, customer_type_id, tags,
-            business_name, website, location, alias, product_name, product_id, amount,
+            business_name, website, location, alias, product_id, amount,
             dates, address_1, landmark, city, state, country, pincode,
         } = req.body;
 
@@ -178,7 +178,7 @@ exports.create = async (req, res) => {
             email: email || null, lead_type_id: lead_type_id || null, customer_type_id: customer_type_id || null, tags: tags || null,
             remark: remark || null, description: description || null, assigned_user: assigned_user || null,
             business_name: business_name || null, website: website || null, location: location || null, alias: alias || null,
-            product_name: product_name || null, product_id: product_id || null, amount: amount || null, dates,
+            product_id: product_id || null, amount: amount || null, dates,
             address_1: address_1 || null, landmark: landmark || null, city: city || null, state: state || null, country: country || null,
             pincode: pincode || null, created_by: userId, updated_by: userId,
         });
@@ -201,7 +201,7 @@ exports.create = async (req, res) => {
     }
 };
 
-    
+
 // PATCH /leads/:id  (partial update)
 exports.patch = async (req, res) => {
     try {
@@ -215,13 +215,13 @@ exports.patch = async (req, res) => {
         // CRITICAL FIX: Ensure ALL fields from the model that need tracking are listed here.
         const fieldsToCheck = [
             "lead_name", "lead_stage_id", "lead_source_id", "branch_id",
-            "lead_type_id", "customer_type_id", "product_id", 
+            "lead_type_id", "customer_type_id", "product_id",
             "remark", "description", "assigned_user",
-            "tags", 
-            "business_name", "website", "location", "alias", "product_name",
+            "tags",
+            "business_name", "website", "location", "alias",
             "amount",
             "address_1", "landmark", "city", "state", "country", "pincode",
-            "contact_number", "email", "dates", 
+            "contact_number", "email", "dates",
         ];
 
         // --- 1. Build the 'up' object and generate summary descriptions ---
@@ -263,7 +263,7 @@ exports.patch = async (req, res) => {
                         description = `Updated **${fieldName}** from *${oldLogValue}* to *${newLogValue}*`;
                     }
 
-                    changeDescriptions.push(description);
+                    changeDescriptions.push({ key: k, text: description }); // Store key and text
                 }
             }
         });
@@ -275,13 +275,29 @@ exports.patch = async (req, res) => {
 
         // Log consolidated activity as a JSON array string
         if (changeDescriptions.length > 0) {
-            const summaryData = JSON.stringify(changeDescriptions);
+            
+            let logFieldName;
+            
+            if (changeDescriptions.length === 1) {
+                // Case 1: Only one field was updated (e.g., 'lead_stage_id')
+                const singleKey = changeDescriptions[0].key;
+                const fieldName = singleKey.replace(/_/g, ' ');
+                // Format: Lead Stage ID Updated (e.g., capitalizing the whole field name)
+                logFieldName = fieldName.charAt(0).toUpperCase() + fieldName.slice(1) + ' Updated';
+            } else {
+                // Case 2: Multiple fields were updated
+                logFieldName = 'Multiple Fields Updated';
+            }
+            
+            // Extract only the text messages for the summary JSON array
+            const summaryTexts = changeDescriptions.map(d => d.text);
+            const summaryData = JSON.stringify(summaryTexts);
 
             await LeadActivityLog.create({
                 lead_id: lead.id,
                 user_id: userId,
-                branch_id: lead.branch_id, // ADDED: branch_id
-                field_name: 'Multiple Fields Updated',
+                branch_id: lead.branch_id,
+                field_name: logFieldName, // ⬅️ DYNAMIC FIELD NAME
                 old_value: null, new_value: null,
                 summary: summaryData,
             });

@@ -28,7 +28,6 @@ const Lead = sequelize.define("Lead", {
     website: { type: DataTypes.STRING, allowNull: true },
     location: { type: DataTypes.STRING, allowNull: true },
     alias: { type: DataTypes.STRING, allowNull: true },
-    product_name: { type: DataTypes.STRING, allowNull: true },
     product_id: { type: DataTypes.INTEGER, allowNull: true },
     amount: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
 

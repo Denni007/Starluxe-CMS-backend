@@ -117,41 +117,24 @@ exports.update = async (req, res) => {
   }
 };
 
-/**
- * Delete a Product Category. Includes foreign key constraint checking.
- * DELETE /categories/:id
- */
+
 exports.remove = async (req, res) => {
   try {
-    const categoryId = req.params.id;
-    const item = await ProductCategory.findByPk(categoryId);
+    const item = await ProductCategory.findByPk(req.params.id);
 
     if (!item) {
       return res.status(404).json({ status: "false", message: "ProductCategory not found" });
     }
 
     try {
-      // Check if any products are linked to this category before attempting deletion
-      const linkedProductsCount = await Products.count({ where: { category_id: categoryId } });
-      
-      if (linkedProductsCount > 0) {
-        const message = `Cannot delete this Product Category because it is currently linked to ${linkedProductsCount} product(s). Please update or delete the linked products first.`;
-        return res.status(409).json({
-          status: "false",
-          message: message,
-          error_type: "ForeignKeyConstraintError" 
-        });
-      }
-
       await item.destroy();
       res.json({ status: "true", message: "ProductCategory deleted successfully" });
     } catch (dbError) {
-      // Generic database error fallback check (less reliable than the manual count above, 
-      // but kept for completeness if other tables link to categories unexpectedly)
-      if (dbError.name === 'SequelizeForeignKeyConstraintError' ||
-          (dbError.original && (dbError.original.code === 'ER_ROW_IS_REFERENCED' || dbError.original.errno === 1451))) {
 
-        const message = "Cannot delete this Product Category due to existing database links. Please ensure no Products use this Category.";
+      if (dbError.name === 'SequelizeForeignKeyConstraintError' ||
+        (dbError.original && (dbError.original.code === 'ER_ROW_IS_REFERENCED' || dbError.original.errno === 1451))) {
+
+        const message = "Cannot delete this Product Category because it is currently linked to one or more Leads. Please update or delete the linked Leads first.";
 
         return res.status(409).json({ 
           status: "false",
@@ -159,7 +142,6 @@ exports.remove = async (req, res) => {
           error_type: "ForeignKeyConstraintError" 
         });
       }
-      
       throw dbError;
     }
 

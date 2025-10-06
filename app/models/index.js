@@ -188,7 +188,9 @@ module.exports = {
   Reminder,
   CallResponseStage,
   Call,
-  Products
+  Products,
+  LeadActivityLog,
+  ProductCategory,
 };
 
 

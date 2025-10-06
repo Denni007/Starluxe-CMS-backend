@@ -48,7 +48,7 @@ exports.create = async (req, res) => {
 
 exports.update = async (req, res) => {
   try {
-    const { name,color ,description,order} = req.body;
+    const { name, color, description, order } = req.body;
     const item = await LeadStage.findByPk(req.params.id);
 
     if (!item) {
@@ -76,9 +76,27 @@ exports.remove = async (req, res) => {
       return res.status(404).json({ status: "false", message: "LeadStage not found" });
     }
 
-    await item.destroy();
-    res.json({ status: "true", message: "LeadStage deleted successfully" });
+    try {
+      await item.destroy();
+      res.json({ status: "true", message: "LeadStage deleted successfully" });
+    } catch (dbError) {
+
+      if (dbError.name === 'SequelizeForeignKeyConstraintError' ||
+        (dbError.original && (dbError.original.code === 'ER_ROW_IS_REFERENCED' || dbError.original.errno === 1451))) {
+
+        const message = "Cannot delete this Lead Stage because it is currently linked to one or more Leads. Please update or delete the linked Leads first.";
+
+        return res.status(409).json({ 
+          status: "false",
+          message: message,
+          error_type: "ForeignKeyConstraintError" 
+        });
+      }
+      throw dbError;
+    }
+
   } catch (e) {
+    console.error("LeadStage remove error:", e.message);
     res.status(400).json({ status: "false", message: e.message });
   }
 };

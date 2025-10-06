@@ -1,4 +1,3 @@
-// app/controller/CustomerType.controller.js
 const CustomerType = require("../models/CustomerType.js");
 
 

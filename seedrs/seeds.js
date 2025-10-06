@@ -271,6 +271,8 @@
 // seeders/seeds.js
 // seeders/seeds.js
 // seeds/seed.all.js
+
+
 const sequelize = require("../app/config"); // Sequelize instance
 const bcrypt = require("bcrypt");
 const { Op } = require("sequelize");
@@ -294,7 +296,9 @@ const {
   Call,
   LeadType,
   Products,
-  CustomerType
+  CustomerType,
+  ProductCategory,
+  LeadActivityLog, 
 } = require("../app/models");
 
 const { PERMISSION_MODULES,PERMISSION_ACTIONS, ROLE } = require("../app/constants/constant");
@@ -414,18 +418,18 @@ async function buildPermissionIdArrays(t) {
   const salesIds = allPerms
     .filter(p => SALES_MODULES.includes(p.module) && ["access","create", "update", "view"].includes(p.action))
     .map(p => p.id);
-  // NEW LOGIC FOR SALES PERMISSIONS
-  const businessModule = "Business";
-  const salesPermissions = await Permission.findAll({
-    where: {
-      module: { [Op.not]: businessModule },
-      action: { [Op.in]: ["access", "create", "update", "view"] }
-    },
-    attributes: ["id"],
-    transaction: t,
-  });
-  const salesPermissionIds = salesPermissions.map(p => p.id);
-  // NEW LOGIC FOR SALES PERMISSIONS
+  // NEW LOGIC FOR SALES PERMISSIONS
+  const businessModule = "Business";
+  const salesPermissions = await Permission.findAll({
+    where: {
+      module: { [Op.not]: businessModule },
+      action: { [Op.in]: ["access", "create", "update", "view"] }
+    },
+    attributes: ["id"],
+    transaction: t,
+  });
+  const salesPermissionIds = salesPermissions.map(p => p.id);
+  // NEW LOGIC FOR SALES PERMISSIONS
 
   const viewerIds = allPerms
     .filter(p => ALL_MODULES.includes(p.module) && p.action === "view")
@@ -570,7 +574,7 @@ exports.seedAdmin = async () => {
       transaction: t,
     });
 
-    // UNCOMMENTED AND UPDATED SALES USERS
+    // UNCOMMENTED AND UPDATED SALES USERS
     const [salesA] = await User.findOrCreate({
       where: { email: "sales.a@yopmail.com" },
       defaults: {
@@ -635,9 +639,9 @@ exports.seedAdmin = async () => {
       // console.log(br.name)
       await ensureRole(br, ROLE.SUPER_ADMIN);
       await ensureRole(br, "Manager");
-      // UNCOMMENTED SALES ROLE
+      // UNCOMMENTED SALES ROLE
       await ensureRole(br, "Sales");
-      // UNCOMMENTED VIEWER ROLE
+      // UNCOMMENTED VIEWER ROLE
       await ensureRole(br, "Viewer");
     }
 
@@ -650,16 +654,16 @@ exports.seedAdmin = async () => {
 
       const superAdminRole = rolesByBranch.get(`${br.id}:${ROLE.SUPER_ADMIN}`);
       const managerRole = rolesByBranch.get(`${br.id}:Manager`);
-      // UNCOMMENTED SALES ROLE
+      // UNCOMMENTED SALES ROLE
       const salesRole = rolesByBranch.get(`${br.id}:Sales`);
-      // UNCOMMENTED VIEWER ROLE
+      // UNCOMMENTED VIEWER ROLE
       const viewerRole = rolesByBranch.get(`${br.id}:Viewer`);
 
       await setRolePermissionExact(superAdminRole.id, arrays.superadmin, t);
       await setRolePermissionExact(managerRole.id, arrays.manager, t);
-      // UNCOMMENTED SALES PERMISSION ASSIGNMENT
+      // UNCOMMENTED SALES PERMISSION ASSIGNMENT
       await setRolePermissionExact(salesRole.id, arrays.sales, t);
-      // UNCOMMENTED VIEWER PERMISSION ASSIGNMENT
+      // UNCOMMENTED VIEWER PERMISSION ASSIGNMENT
       await setRolePermissionExact(viewerRole.id, arrays.viewer, t);
     }
 
@@ -687,7 +691,7 @@ exports.seedAdmin = async () => {
       });
     }
 
-    // UNCOMMENTED SALES AND VIEWER MEMBERSHIPS
+    // UNCOMMENTED SALES AND VIEWER MEMBERSHIPS
     {
       const r = rolesByBranch.get(`${globex.west.id}:Sales`);
       await assignUserToBranchRole({ userId: salesA.id, branchId: globex.west.id, roleId: r.id, isPrimary: true, t });
@@ -985,10 +989,107 @@ const [lead2Reminder] = await Reminder.findOrCreate({
   },
   transaction: t,
 });
-});
+// ⬅️ START NEW LOGIC BLOCK HERE
+
+    // Helper to log summary as JSON array string
+    // NOTE: This helper should be defined before use in the seeder file.
+    const jsonSummary = (messages) => JSON.stringify(Array.isArray(messages) ? messages : [messages]);
+
+    // Ensure Product Categories and Products are created before logging
+    // Find business instances from section (D)
+    const acmeBizId = acme.biz.id;
+    
+    const [pipeCat] = await ProductCategory.findOrCreate({
+        where: { name: "Piping Solutions", business_id: acmeBizId },
+        defaults: { name: "Piping Solutions", business_id: acmeBizId, description: "PVC and metal pipe solutions" },
+        transaction: t
+    });
+    const [valveCat] = await ProductCategory.findOrCreate({
+        where: { name: "Fittings & Valves", business_id: acmeBizId },
+        defaults: { name: "Fittings & Valves", business_id: acmeBizId, description: "Elbows, reducers, and ball valves" },
+        transaction: t
+    });
+    
+    const [pvcPipe] = await Products.findOrCreate({
+        where: { name: "Standard PVC Pipe (10ft)", business_id: acmeBizId },
+        defaults: {
+            name: "Standard PVC Pipe (10ft)",
+            business_id: acmeBizId,
+            category_id: pipeCat.id,
+            price: 125.50,
+            description: "10-foot schedule 40 PVC pipe."
+        },
+        transaction: t
+    });
+    const [ballValve] = await Products.findOrCreate({
+        where: { name: "Brass Ball Valve (1 inch)", business_id: acmeBizId },
+        defaults: {
+            name: "Brass Ball Valve (1 inch)",
+            business_id: acmeBizId,
+            category_id: valveCat.id,
+            price: 350.00,
+            description: "High-pressure rated 1-inch brass valve."
+        },
+        transaction: t
+    });
+
+    // (P) Lead Activity Logs
+    
+    // Log 1: Creation (Since the lead was created earlier, we log a mock creation event)
+    await LeadActivityLog.findOrCreate({
+        where: { lead_id: lead1.id, field_name: 'Creation' },
+        defaults: {
+            lead_id: lead1.id,
+            user_id: admin.id,
+            branch_id: acmeHq.id,
+            field_name: 'Creation',
+            summary: jsonSummary([`Lead **${lead1.lead_name}** created`]), // Array wrapper added for consistency
+        },
+        transaction: t
+    });
+
+    // Log 2: Update - Single Field Change (e.g., Stage Change)
+    await LeadActivityLog.findOrCreate({
+        where: { lead_id: lead1.id, field_name: 'Lead Stage Updated' },
+        defaults: {
+            lead_id: lead1.id,
+            user_id: manager.id,
+            branch_id: acmeHq.id,
+            field_name: 'Lead Stage Updated',
+            // 🔑 CORRECTED: Using .name property of LeadStage model
+            summary: jsonSummary([`Updated **lead stage id** from *${newStage.name}* to *${inProcessStage.name}*`]),
+        },
+        transaction: t
+    });
+    
+    // Log 3: Update - Multiple Fields Change (e.g., Assigned User and Product ID change)
+    const managerFullName = `${manager.first_name} ${manager.last_name}`;
+    const salesAFullName = `${salesA.first_name} ${salesA.last_name}`;
+
+    const summaryArray = [
+        // 🔑 CORRECTED: Using full names for User objects
+        `Updated **assigned user** from *${managerFullName}* to *${salesAFullName}*`,
+        // 🔑 CORRECTED: Using full name for Product object
+        `Added **product id** as *${pvcPipe.name}*`
+    ];
+
+    await LeadActivityLog.findOrCreate({
+        where: { lead_id: lead1.id, field_name: 'Multiple Fields Updated' },
+        defaults: {
+            lead_id: lead1.id,
+            user_id: admin.id,
+            branch_id: acmeHq.id,
+            field_name: 'Multiple Fields Updated',
+            summary: jsonSummary(summaryArray),
+        },
+        transaction: t
+    });
+
+// ⬅️ END NEW LOGIC BLOCK HERE
+}); // Closes the sequelize.transaction(async (t) => {
 
 console.log(
-"✅ Seed complete: industries, users, businesses, branches, global permissions, roles, explicit Role→Permission arrays, memberships, lead sources, lead stages, leads, and tasks"
+"✅ Seed complete: industries, users, businesses, branches, global permissions, roles, explicit Role→Permission arrays, memberships, lead sources, lead stages, leads, tasks, product categories, and products"
 );
 };
 
