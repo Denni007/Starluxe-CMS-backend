@@ -42,25 +42,37 @@ function mapLeadPayload(leadInstance) {
     }
     delete obj.source;
 
-    if (obj.type) {
-        obj.lead_type_id = { id: obj.type.id, name: obj.type.name };
-    }
-    delete obj.type;
-
-    if (obj.customerType) {
-        obj.customer_type_id = { id: obj.customerType.id, name: obj.customerType.name };
-    }
-    delete obj.customerType;
-
-    if (obj.products) {
-        obj.product_id = { id: obj.products.id, name: obj.products.name, category: obj.products.category, price: obj.products.price };
-    }
-    delete obj.products;
-
-    // Remove raw summary field from any old log data if this function is used on logs (for safety)
-    delete obj.activities; 
-
-    return obj;
+  if (obj.type) {
+    obj.lead_type_id = {
+      id: obj.type.id,
+      name: obj.type.name,
+      color: obj.stage?.color
+  };
+  }
+  else {
+    // keep scalar value
+  }
+  if (obj.customerType) {
+    obj.customer_type_id = {
+      id: obj.customerType.id,
+      name: obj.customerType.name
+    };
+  }
+  else {
+    // keep scalar value
+  }
+  if (obj.products) {
+    obj.product_id = {
+      id: obj.products.id,
+      name: obj.products.name,
+      category: obj.products.category,
+      price: obj.products.price
+    };
+  }
+  else {
+    // keep scalar valueg
+  }
+  return obj;
 }
 
 exports.list = async (req, res) => {
