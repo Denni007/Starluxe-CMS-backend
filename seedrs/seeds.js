@@ -788,13 +788,24 @@ exports.seedAdmin = async () => {
     // for (const name of leadStages) {
     //   await LeadStage.findOrCreate({ where: { name }, defaults: { name, description: name }, transaction: t });
     // }
-    const leadType= [
-      "Hot",
-      "Cold",
-      "Warm"
+    const leadType= [{
+  "name":"Hot",
+  "description":"Hot",
+  "color":"#3498DB"
+},
+{
+  "name":"Warm",
+  "description":"Warm",
+  "color":"#1ABC9C"
+},
+{
+  "name":"Cold",
+  "description":"Cold",
+  "color":"#9B59B6"
+}
     ];
-    for (const name of leadType) {
-      await LeadType.findOrCreate({ where: { name }, defaults: { name, description: name }, transaction: t });
+    for (const [i, stage] of leadType.entries()) {
+      await LeadType.findOrCreate({ where: { name:stage.name }, defaults: { name:stage.name, description: stage.name,color:stage.color }, transaction: t });
     }
     const customerType = [ 'Distributor','Retailer','Channel Partner','Borwell','End User',]
 
