@@ -4,8 +4,8 @@ const LeadActivityLog = require("../controller/LeadActivityLog.js");
 
 const router = express.Router();
 
-router.get("/", LeadActivityLog.listAllActivities);
-router.get("/:id", LeadActivityLog.getLogById);
-router.get("/lead/:id", LeadActivityLog.getLeadActivities);
+router.get("/", isAuth, LeadActivityLog.listAllActivities);
+router.get("/:id", isAuth, LeadActivityLog.getLogById);
+router.get("/lead/:id", isAuth, LeadActivityLog.getLeadActivities);
 
 module.exports = router;

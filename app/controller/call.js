@@ -7,63 +7,25 @@ const Branch = require("../models/branch.js");
 const CallResponseStage = require("../models/CallResponseStage.js");
 const sequelize = require("../config");
 const { Op } = require("sequelize"); // Import Op for complex queries
+const LeadActivityLog = require("../models/LeadActivityLog.js"); // 🔑 New Import
 
-// This function maps the Sequelize model instance to a clean JSON payload,
-// restructuring associated data into nested objects.
-function mapCallPayload(callInstance) {
-    const obj = callInstance.toJSON();
+// Helper to log summary as JSON array string
+const jsonSummary = (messages) => JSON.stringify(Array.isArray(messages) ? messages : [messages]);
 
-    if (obj.assignee) {
-        obj.assigned_user = {
-            id: obj.assignee.id,
-            user_name: obj.assignee.user_name,
-            email: obj.assignee.email,
-        };
-    }
-    delete obj.assignee;
+const standardizeDate = (dateValue) => {
+    if (!dateValue) return null;
+    const dateStr = dateValue instanceof Date ? dateValue.toISOString() : String(dateValue);
+    // Replace .XXX and ensure the string ends with Z (e.g., '2025-10-15T14:01:00Z')
+    return dateStr.replace(/\.\d{3}Z$/, 'Z').replace(/\.\d{1,2}Z$/, 'Z');
+};
 
-    if (obj.lead) {
-        obj.lead_id = {
-            id: obj.lead.id,
-            lead_name: obj.lead.lead_name,
-        };
-    }
-    delete obj.lead;
+// Helper function to safely get a string/JSON value for logging (Assumed defined in scope)
+const getLogValue = (val) => {
+    if (val === null || val === undefined) return null;
+    return typeof val === 'object' ? JSON.stringify(val) : String(val);
+};
 
-    if (obj.task) {
-        obj.task_id = {
-            id: obj.task.id,
-            task_name: obj.task.task_name,
-        };
-    }
-    delete obj.task;
-
-    if (obj.callResponseStage) {
-        obj.call_response_id = {
-            id: obj.callResponseStage.id,
-            name: obj.callResponseStage.name,
-            description: obj.callResponseStage.description,
-        };
-    }
-    delete obj.callResponseStage;
-
-    if (obj.reminder) {
-        obj.reminder_id = {
-            id: obj.reminder.id,
-            reminder_name: obj.reminder.reminder_name,
-            reminder_date: obj.reminder.reminder_date,
-            reminder_time: obj.reminder.reminder_time,
-            reminder_unit: obj.reminder.reminder_unit,
-            reminder_value: obj.reminder.reminder_value,
-        };
-    }
-    delete obj.reminder;
-
-    return obj;
-}
-
-
-// Shared include array for all find queries to ensure consistency
+// Shared include array (remains unchanged)
 const callIncludes = [
     { model: User, as: "assignee", attributes: ["id", "user_name", "email"] },
     { model: Lead, as: "lead", attributes: ["id", "lead_name"] },
@@ -71,6 +33,38 @@ const callIncludes = [
     { model: Reminder, as: "reminder", attributes: ["id", "reminder_name", "reminder_date", "reminder_time", "reminder_unit", "reminder_value"] },
     { model: CallResponseStage, as: "callResponseStage", attributes: ["id", "name", "description"] }
 ];
+
+function mapCallPayload(callInstance) { /* ... (remains unchanged) ... */
+    const obj = callInstance.toJSON();
+
+    if (obj.assignee) {
+        obj.assigned_user = { id: obj.assignee.id, user_name: obj.assignee.user_name, email: obj.assignee.email };
+    }
+    delete obj.assignee;
+
+    if (obj.lead) {
+        obj.lead_id = { id: obj.lead.id, lead_name: obj.lead.lead_name };
+    }
+    delete obj.lead;
+
+    if (obj.task) {
+        obj.task_id = { id: obj.task.id, task_name: obj.task.task_name };
+    }
+    delete obj.task;
+
+    if (obj.callResponseStage) {
+        obj.call_response_id = { id: obj.callResponseStage.id, name: obj.callResponseStage.name, description: obj.callResponseStage.description };
+    }
+    delete obj.callResponseStage;
+
+    if (obj.reminder) {
+        obj.reminder_id = { id: obj.reminder.id, reminder_name: obj.reminder.reminder_name, reminder_date: obj.reminder.reminder_date, reminder_time: obj.reminder.reminder_time, reminder_unit: obj.reminder.reminder_unit, reminder_value: obj.reminder.reminder_value };
+    }
+    delete obj.reminder;
+
+    return obj;
+}
+
 
 // --- NEW DEDICATED CREATE APIS ---
 
@@ -88,6 +82,18 @@ exports.createLogCall = async (req, res) => {
             call_type: 'Log',
             created_by: userId, updated_by: userId,
         });
+
+        // 🔑 LOGGING 1: Log Call Creation if associated with a Lead
+        if (lead_id) {
+            const message = [`Logged Call **${call.subject}** created and linked to Lead.`];
+            await LeadActivityLog.create({
+                lead_id: lead_id,
+                user_id: userId,
+                branch_id: branch_id,
+                field_name: 'Call Logged',
+                summary: jsonSummary(message),
+            });
+        }
 
         const result = await Call.findByPk(call.id, { include: callIncludes });
         const mapped = mapCallPayload(result);
@@ -108,17 +114,14 @@ exports.createScheduleCall = async (req, res) => {
             return res.status(400).json({ status: "false", message: "subject, branch_id, start_time, and full reminder details are required for scheduled calls" });
         }
 
-        // Use a transaction for atomic operation (Call + Reminder)
         const result = await sequelize.transaction(async (t) => {
 
-            // 1. Create Call (with call_type: 'Schedule')
             const call = await Call.create({
                 subject, branch_id, call_response_id, direction, start_time, end_time, duration, summary, lead_id, task_id, contact_number, assigned_user,
                 call_type: 'Schedule',
                 created_by: userId, updated_by: userId,
             }, { transaction: t });
 
-            // 2. Create Reminder
             const reminderRecord = await Reminder.create({
                 reminder_name: `Call Reminder: ${subject}`,
                 reminder_date: reminder.reminder_date,
@@ -130,12 +133,22 @@ exports.createScheduleCall = async (req, res) => {
                 task_id: task_id,
                 assigned_user: assigned_user,
                 created_by: userId, updated_by: userId,
-                // Link reminder to call (assuming Reminder model has call_id FK)
-                call_id: call.id, 
+                call_id: call.id,
             }, { transaction: t });
 
-            // 3. Link the reminder ID back to the Call
             await call.update({ reminder_id: reminderRecord.id }, { transaction: t });
+
+            // 🔑 LOGGING 2: Log Scheduled Call Creation if associated with a Lead
+            if (lead_id) {
+                const message = [`Scheduled Call **${call.subject}** created for *${start_time}*.`];
+                await LeadActivityLog.create({
+                    lead_id: lead_id,
+                    user_id: userId,
+                    branch_id: branch_id,
+                    field_name: 'Call Scheduled',
+                    summary: jsonSummary(message),
+                }, { transaction: t });
+            }
 
             return Call.findByPk(call.id, { include: callIncludes, transaction: t });
         });
@@ -149,110 +162,271 @@ exports.createScheduleCall = async (req, res) => {
 
 // --- DEDICATED UPDATE APIS ---
 
-// PATCH Update Log Call By ID (Allows update of a past/logged call)
 exports.patchLogCall = async (req, res) => {
     try {
         const userId = req.user?.id || null;
+        
+        // Fetch the existing call record
         const call = await Call.findByPk(req.params.id);
         if (!call) return res.status(404).json({ status: "false", message: "Call not found" });
 
-        // Enforce: only allows updates to Logged calls
         if (call.call_type !== 'Log') {
-             return res.status(400).json({ status: "false", message: "This endpoint is only for Logged calls." });
+            return res.status(400).json({ status: "false", message: "This endpoint is only for Logged calls." });
         }
 
         const up = {};
-        [
+        const changeDescriptions = [];
+        
+        // Fields to track on the Call model for Logged calls
+        const fieldsToTrack = [
             "subject", "call_response_id", "direction", "start_time", "end_time", "duration",
             "summary", "lead_id", "task_id", "contact_number", "assigned_user", "branch_id"
-        ].forEach((k) => {
-            if (typeof req.body[k] !== "undefined") up[k] = req.body[k];
+        ];
+        
+        // 🔑 Helper to standardize date strings (must be available in scope)
+        const standardizeDate = (dateValue) => {
+            if (!dateValue) return null;
+            const dateStr = dateValue instanceof Date ? dateValue.toISOString() : String(dateValue);
+            return dateStr.replace(/\.\d{3}Z$/, 'Z').replace(/\.\d{1,2}Z$/, 'Z');
+        };
+
+        // Use transaction for atomic operation
+        const result = await sequelize.transaction(async (t) => {
+
+            // 1. Process all fields for changes
+            fieldsToTrack.forEach((k) => {
+                if (typeof req.body[k] !== "undefined") {
+                    const oldValue = call.get(k);
+                    const newValue = req.body[k];
+
+                    let oldLogValue;
+                    let newLogValue = getLogValue(newValue);
+
+                    // Handle date/time fields specifically
+                    if (k === 'start_time' || k === 'end_time') {
+                         const oldStandard = standardizeDate(oldValue);
+                         const newStandard = standardizeDate(newValue);
+                         
+                         // Check if the substantive value changed
+                         if (oldStandard === newStandard) {
+                             return; // Skip logging and update if dates are the same
+                         }
+                         
+                         oldLogValue = oldStandard; 
+                         newLogValue = newStandard;
+                    } else {
+                        oldLogValue = getLogValue(oldValue);
+                    }
+
+                    // Check if non-date values changed
+                    if (oldLogValue !== newLogValue) {
+                        const fieldName = k.replace(/_/g, ' ');
+                        changeDescriptions.push({ 
+                            key: k, 
+                            text: `Updated **${fieldName}** from *${oldLogValue || 'NULL'}* to *${newLogValue}*` 
+                        });
+                        up[k] = req.body[k];
+                    }
+                }
+            });
+
+            // 2. Final Call Update & Logging
+            up.updated_by = userId;
+            
+            const totalChanges = changeDescriptions.length;
+
+            if (totalChanges > 0) {
+                // Perform the update
+                await call.update(up, { transaction: t });
+            } else {
+                 // No substantive changes. Prevent update/logging.
+                 return Call.findByPk(call.id, { include: callIncludes, transaction: t });
+            }
+
+
+            // 🔑 LOGGING 3: Log Update to Logged Call
+            if (call.lead_id && totalChanges > 0) {
+                // Determine dynamic field name
+                const logFieldName = totalChanges > 1 ? 'Call Log Details Updated' : changeDescriptions[0].key.replace(/_/g, ' ').toUpperCase() + ' Updated';
+
+                await LeadActivityLog.create({
+                    lead_id: call.lead_id,
+                    user_id: userId,
+                    branch_id: call.branch_id,
+                    field_name: logFieldName,
+                    summary: jsonSummary(changeDescriptions.map(d => d.text)),
+                }, { transaction: t });
+            }
+
+
+            // Re-fetch the updated item
+            return Call.findByPk(call.id, { include: callIncludes, transaction: t });
         });
 
-        up.updated_by = userId;
-        await call.update(up);
-
-        const updatedCall = await Call.findByPk(call.id, { include: callIncludes });
-        res.json({ status: "true", data: mapCallPayload(updatedCall) });
+        res.json({ status: "true", data: mapCallPayload(result) });
     } catch (e) {
         console.error("Call patchLogCall error:", e);
         res.status(400).json({ status: "false", message: e.message });
     }
 };
 
-// PATCH Update Schedule Call By ID (Allows modification of a standard schedule)
 exports.patchScheduleCall = async (req, res) => {
     try {
         const userId = req.user?.id || null;
-        // 🔑 NOTE: Fetch the call with the reminder include for safe access
-        const call = await Call.findByPk(req.params.id, { include: [{ model: Reminder, as: 'reminder' }] }); 
+
+        // Fetch the call and eagerly load the reminder data for comparison
+        const call = await Call.findByPk(req.params.id, {
+            include: [{ model: Reminder, as: 'reminder' }]
+        });
         if (!call) return res.status(404).json({ status: "false", message: "Call not found" });
 
-        // Enforce: only allows updates to Scheduled calls
         if (call.call_type !== 'Schedule') {
-             return res.status(400).json({ status: "false", message: "This endpoint is only for Scheduled calls." });
+            return res.status(400).json({ status: "false", message: "This endpoint is only for Scheduled calls." });
         }
 
         const up = {};
-        const reminderData = req.body.reminder; 
+        const reminderData = req.body.reminder;
+        const changeDescriptions = [];
 
-        [
-            "subject", "direction", "start_time", "end_time", "duration",
-            "summary", "lead_id", "task_id", "contact_number", "assigned_user", "branch_id"
-        ].forEach((k) => {
-            if (typeof req.body[k] !== "undefined") up[k] = req.body[k];
-        });
+        // --- Fields to track on the Call model ---
+        const callFieldsToTrack = [
+            "subject", "direction", "start_time", "summary", "lead_id", "task_id", "contact_number", "assigned_user", "branch_id"
+        ];
 
-        up.updated_by = userId;
-        await call.update(up);
+        let isReminderChanged = false;
 
-        // 🔑 FIX: Update associated reminder only if reminderData is provided
-        if (call.reminder_id && reminderData) {
-            const reminderUpdates = {
-                updated_by: userId,
-            };
-            if (reminderData.reminder_date !== undefined) reminderUpdates.reminder_date = reminderData.reminder_date;
-            if (reminderData.reminder_time !== undefined) reminderUpdates.reminder_time = reminderData.reminder_time;
-            if (reminderData.reminder_unit !== undefined) reminderUpdates.reminder_unit = reminderData.reminder_unit;
-            if (reminderData.reminder_value !== undefined) reminderUpdates.reminder_value = reminderData.reminder_value;
-            // Update reminder name if subject changed
-            if (up.subject || call.subject) {
-                 reminderUpdates.reminder_name = `Call Reminder: ${up.subject || call.subject}`;
+        // Use transaction for atomic operation
+        const result = await sequelize.transaction(async (t) => {
+
+            // 1. Process Call Record Details (Granular field logging)
+            callFieldsToTrack.forEach((k) => {
+                if (typeof req.body[k] !== "undefined") {
+                    const oldValue = call.get(k);
+                    const newValue = req.body[k];
+
+                    let oldLogValue = getLogValue(oldValue);
+                    let newLogValue = getLogValue(newValue);
+
+                    // 🔑 FIX: Standardized Date Comparison for Log Prevention
+                    if (k === 'start_time' || k === 'end_time') {
+                        const oldStandard = standardizeDate(oldValue);
+                        const newStandard = standardizeDate(newValue);
+
+                        // If the standardized strings are the same, skip logging/update.
+                        if (oldStandard === newStandard) {
+                            return;
+                        }
+
+                        // Use the standardized strings for the log message for cleaner output
+                        oldLogValue = oldStandard;
+                        newLogValue = newStandard;
+                    }
+
+                    if (oldLogValue !== newLogValue) {
+                        const fieldName = k.replace(/_/g, ' ');
+                        changeDescriptions.push({
+                            key: k,
+                            text: `Updated **${fieldName}** from *${oldLogValue || 'NULL'}* to *${newLogValue}*`
+                        });
+                        up[k] = req.body[k];
+                    }
+                }
+            });
+
+            // 2. Process Reminder Details (Granular logging)
+            if (call.reminder_id && call.reminder && reminderData) {
+                const reminderUpdates = { updated_by: userId };
+                const reminderFields = ["reminder_name", "reminder_date", "reminder_time", "reminder_unit", "reminder_value"];
+                const currentReminder = call.reminder.toJSON();
+
+                reminderFields.forEach(k => {
+                    if (reminderData[k] !== undefined) {
+                        const oldValue = currentReminder[k];
+                        const newValue = reminderData[k];
+
+                        const oldLogValue = getLogValue(oldValue);
+                        const newLogValue = getLogValue(newValue);
+
+                        // Check for actual value change
+                        if (oldLogValue !== newLogValue) {
+                            changeDescriptions.push({
+                                key: `${k}`,
+                                text: `Updated ** ${k.replace('_', ' ')}** from *${oldLogValue || 'NULL'}* to *${newLogValue}*`
+                            });
+                            reminderUpdates[k] = newValue;
+                            isReminderChanged = true;
+                        }
+                    }
+                });
+
+                if (isReminderChanged) {
+                    await Reminder.update(reminderUpdates, { where: { id: call.reminder_id }, transaction: t });
+                }
             }
 
-            await Reminder.update(reminderUpdates, { where: { id: call.reminder_id } });
-        }
 
-        // Fetch again with full includes for final response mapping
-        const updatedCall = await Call.findByPk(call.id, { include: callIncludes });
-        res.json({ status: "true", data: mapCallPayload(updatedCall) });
+            // 3. Final Call Update & Logging
+            up.updated_by = userId;
+
+            const totalChanges = changeDescriptions.length;
+
+            // Check for substantive changes: Total tracked changes > 0
+            if (totalChanges > 0) {
+                await call.update(up, { transaction: t });
+            } else {
+                // No substantive changes. Return the fetched item immediately.
+                return Call.findByPk(call.id, { include: callIncludes, transaction: t });
+            }
+
+
+            // 🔑 LOGGING 4: Log Schedule Update
+            if (call.lead_id && totalChanges > 0) {
+                const logFieldName = totalChanges > 1 ? 'Call Details Updated' : changeDescriptions[0].key.replace(/_/g, ' ').toUpperCase() + ' Updated';
+
+                await LeadActivityLog.create({
+                    lead_id: call.lead_id,
+                    user_id: userId,
+                    branch_id: call.branch_id,
+                    field_name: logFieldName,
+                    summary: jsonSummary(changeDescriptions.map(d => d.text)),
+                }, { transaction: t });
+            }
+
+            return Call.findByPk(call.id, { include: callIncludes, transaction: t });
+        });
+
+        res.json({ status: "true", data: mapCallPayload(result) });
     } catch (e) {
         console.error("Call patchScheduleCall error:", e);
         res.status(400).json({ status: "false", message: e.message });
     }
 };
 
-// PATCH Update Reschedule Call By ID (Changes type to 'Reschedule' and updates time/reminder)
 exports.patchRescheduleCall = async (req, res) => {
     try {
         const userId = req.user?.id || null;
+
+        // Fetch the call (no need for reminder include here, as we only need the ID/time)
         const call = await Call.findByPk(req.params.id);
         if (!call) return res.status(404).json({ status: "false", message: "Call not found" });
 
         const { start_time, reminder } = req.body;
 
-        // Validation for rescheduling
-        if (!start_time) {
-            return res.status(400).json({ status: "false", message: "New start_time is required for rescheduling." });
-        }
-        if (!reminder || !reminder.reminder_date || !reminder.reminder_time) {
-            return res.status(400).json({ status: "false", message: "Reminder details (date, time) are required for rescheduling." });
-        }
-        if (!call.reminder_id) {
-             return res.status(400).json({ status: "false", message: "Cannot reschedule a call that has no linked reminder." });
+        // 🔑 FIX: Standardize the existing start_time before capturing it for logging and comparison.
+        // This ensures comparison ignores microsecond noise.
+        const oldStartTimeStandard = standardizeDate(call.start_time);
+        const newStartTimeStandard = standardizeDate(start_time);
+
+        // Validation for required fields
+        if (!start_time || !reminder || !reminder.reminder_name || !reminder.reminder_date || !reminder.reminder_time || !reminder.reminder_unit || !reminder.reminder_value || !call.reminder_id) {
+            return res.status(400).json({ status: "false", message: "New start_time and full reminder details are required for rescheduling a call with a linked reminder." });
         }
 
-        // Use a transaction for atomic update
+        // Check if the start time is actually changing. If not, this is not a reschedule event.
+        if (oldStartTimeStandard === newStartTimeStandard) {
+            return res.status(400).json({ status: "false", message: "The new start_time must be different from the current scheduled time to perform a reschedule." });
+        }
+
         const result = await sequelize.transaction(async (t) => {
 
             // 1. Update Call record: change type and time
@@ -264,11 +438,27 @@ exports.patchRescheduleCall = async (req, res) => {
 
             // 2. Update Reminder record
             await Reminder.update({
+                reminder_name: reminder.reminder_name,
                 reminder_date: reminder.reminder_date,
                 reminder_time: reminder.reminder_time,
+                reminder_unit: reminder.reminder_unit,
+                reminder_value: reminder.reminder_value,
                 updated_by: userId,
-                // Optionally update reminder name if subject changed in a separate field in body
             }, { where: { id: call.reminder_id }, transaction: t });
+
+            // 🔑 LOGGING 5: Log Call Reschedule
+            if (call.lead_id) {
+                // Use the standardized strings for cleaner logging
+                const message = [`Call **${call.subject}** rescheduled from *${oldStartTimeStandard}* to *${newStartTimeStandard}*.`];
+
+                await LeadActivityLog.create({
+                    lead_id: call.lead_id,
+                    user_id: userId,
+                    branch_id: call.branch_id,
+                    field_name: 'Call Rescheduled',
+                    summary: jsonSummary(message),
+                }, { transaction: t });
+            }
 
             return Call.findByPk(call.id, { include: callIncludes, transaction: t });
         });
@@ -280,34 +470,41 @@ exports.patchRescheduleCall = async (req, res) => {
     }
 };
 
-// PATCH Update Cancel Call By ID (Changes type to 'Cancelled' and deletes reminder)
 exports.patchCancelCall = async (req, res) => {
     try {
         const userId = req.user?.id || null;
         const call = await Call.findByPk(req.params.id);
         if (!call) return res.status(404).json({ status: "false", message: "Call not found" });
 
-        // Enforce: only scheduled or rescheduled calls can be cancelled
         if (call.call_type === 'Log' || call.call_type === 'Cancelled') {
-             return res.status(400).json({ status: "false", message: "Cannot cancel a logged or already cancelled call." });
+            return res.status(400).json({ status: "false", message: "Cannot cancel a logged or already cancelled call." });
         }
-        
-        // Use a transaction for atomic update
+
         const result = await sequelize.transaction(async (t) => {
-            
-            // 1. Update Call record: change type
+
             await call.update({
-                call_type: 'Cancelled', // 🔑 Set type to Cancelled
+                call_type: 'Cancelled',
                 end_time: new Date(),
-                reminder_id: null, // Unlink reminder from call
+                reminder_id: null,
                 updated_by: userId,
             }, { transaction: t });
 
-            // 2. Delete Reminder record
             if (call.reminder_id) {
                 await Reminder.destroy({ where: { id: call.reminder_id } });
             }
-            
+
+            // 🔑 LOGGING 6: Log Call Cancellation
+            if (call.lead_id) {
+                const message = [`Call **${call.subject}** was cancelled.`];
+                await LeadActivityLog.create({
+                    lead_id: call.lead_id,
+                    user_id: userId,
+                    branch_id: call.branch_id,
+                    field_name: 'Call Cancelled',
+                    summary: jsonSummary(message),
+                }, { transaction: t });
+            }
+
             return Call.findByPk(call.id, { include: callIncludes, transaction: t });
         });
 
@@ -315,6 +512,36 @@ exports.patchCancelCall = async (req, res) => {
         res.json({ status: "true", data: mapCallPayload(result) });
     } catch (e) {
         console.error("Call patchCancelCall error:", e);
+        res.status(400).json({ status: "false", message: e.message });
+    }
+};
+
+exports.remove = async (req, res) => {
+    try {
+        const call = await Call.findByPk(req.params.id);
+        if (!call) return res.status(404).json({ status: "false", message: "Call not found" });
+
+        // 🔑 LOGGING 7: Log Call Deletion
+        if (call.lead_id) {
+            const message = [`Call **${call.subject}** was permanently deleted.`];
+            await LeadActivityLog.create({
+                lead_id: call.lead_id,
+                user_id: req.user?.id || null,
+                branch_id: call.branch_id,
+                field_name: 'Call Deleted',
+                summary: jsonSummary(message),
+            });
+        }
+
+        // Also delete the associated reminder if it exists
+        if (call.reminder_id) {
+            await Reminder.destroy({ where: { id: call.reminder_id } });
+        }
+
+        await call.destroy();
+        res.json({ status: "true", message: "Deleted" });
+    } catch (e) {
+        console.error("Call remove error:", e);
         res.status(400).json({ status: "false", message: e.message });
     }
 };
@@ -585,18 +812,42 @@ exports.patch = async (req, res) => {
 // Delete a call
 exports.remove = async (req, res) => {
     try {
+        const userId = req.user?.id || null; // Capture user ID
         const call = await Call.findByPk(req.params.id);
+        
         if (!call) return res.status(404).json({ status: "false", message: "Call not found" });
 
-        // Also delete the associated reminder if it exists
-        if (call.reminder_id) {
-            await Reminder.destroy({ where: { id: call.reminder_id } });
-        }
+        // Use a transaction for atomic deletion of Call and Reminder, plus logging
+        await sequelize.transaction(async (t) => {
+            
+            // 🔑 LOGGING 1: Log Call Deletion if associated with a Lead
+            if (call.lead_id) {
+                 const message = [`Call **${call.subject}** was permanently deleted.`];
+                 
+                 await LeadActivityLog.create({
+                     lead_id: call.lead_id,
+                     user_id: userId,
+                     branch_id: call.branch_id,
+                     field_name: 'Call Deleted',
+                     summary: jsonSummary(message),
+                 }, { transaction: t });
+            }
+            
+            // 2. Also delete the associated reminder if it exists
+            if (call.reminder_id) {
+                await Reminder.destroy({ where: { id: call.reminder_id }, transaction: t });
+            }
 
-        await call.destroy();
+            // 3. Destroy the call record
+            await call.destroy({ transaction: t });
+        });
+        
         res.json({ status: "true", message: "Deleted" });
+        
     } catch (e) {
         console.error("Call remove error:", e);
+        // If the error is a Foreign Key constraint from another table (e.g., Reports), 
+        // the transaction will automatically rollback.
         res.status(400).json({ status: "false", message: e.message });
     }
 };

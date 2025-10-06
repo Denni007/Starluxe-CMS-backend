@@ -5,39 +5,38 @@ exports.PAYMENT_TYPE = {
 }
 
 exports.PERMISSION_ACTIONS = {
-    access:"access",
-    create:"create",
-    view:"view",
-    update:"update",
-    delete:"delete"
+    access: "access",
+    create: "create",
+    view: "view",
+    update: "update",
+    delete: "delete"
 }
 exports.CUSTOMERTYPE = {
-    DISTRIBUTOR : 'Distributor',
+    DISTRIBUTOR: 'Distributor',
     RETAILER: 'Retailer',
-    CHANNEL_PARTNER :'Channel Partner',
-    BORWELL : 'Borwell',
-    END_USER : 'End User',
-  }
+    CHANNEL_PARTNER: 'Channel Partner',
+    BORWELL: 'Borwell',
+    END_USER: 'End User',
+}
 
 exports.PERMISSION_MODULES = {
-    Leads:"Leads",
-    Opportunities:"Opportunities",
+    Leads: "Leads",
+    Opportunities: "Opportunities",
     // Items:"Items",
-   // Quotations:"Quotations",
+    // Quotations:"Quotations",
     // Contacts:"Contacts",
-    Tasks:"Tasks",
-    Reminders:"Reminders",
+    Tasks: "Tasks",
+    Reminders: "Reminders",
     // Employee:"Employee",
-    Reports:"Reports",
-    Settings:"Settings",
-    Business:"Business",
-    Dashboard:"Dashboard",
-    Branches:"Branches",
-    Users:"Users",
-    Roles:"Roles",
-    Products:"Products",
-
-    Permissions:"Permissions"
+    Reports: "Reports",
+    Settings: "Settings",
+    Business: "Business",
+    Dashboard: "Dashboard",
+    Branches: "Branches",
+    Users: "Users",
+    Roles: "Roles",
+    Products: "Products",
+    Permissions: "Permissions"
 }
 
 
@@ -84,7 +83,7 @@ exports.MACHINE_SCHEDULE_TYPE = {
     BREAKDOWN: "Breakdown"
 }
 
-exports.MACHINE_SCHEDULE_FREQUENCY= {
+exports.MACHINE_SCHEDULE_FREQUENCY = {
     DAILY: "Daily",
     WEEKLY: "Weekly",
     MONTHLY: "Monthly"

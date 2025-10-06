@@ -24,55 +24,54 @@ function mapLeadPayload(leadInstance) {
     }
     delete obj.assignee;
 
-  // map stage -> lead_stage_id
-  if (obj.stage) {
-    console.log(obj.stage)
-    obj.lead_stage_id = {
-      id: obj.stage.id,
-      name: obj.stage.name,
-      color: obj.stage?.color
-    };
-  } else {
-    // keep existing scalar lead_stage_id if no relation
-  }
-  delete obj.stage;
+    // map stage -> lead_stage_id
+    if (obj.stage) {
+        obj.lead_stage_id = {
+            id: obj.stage.id,
+            name: obj.stage.name,
+            color: obj.stage?.color
+        };
+    } else {
+        // keep existing scalar lead_stage_id if no relation
+    }
+    delete obj.stage;
 
     if (obj.source) {
         obj.lead_source_id = { id: obj.source.id, name: obj.source.name };
     }
     delete obj.source;
 
-  if (obj.type) {
-    obj.lead_type_id = {
-      id: obj.type.id,
-      name: obj.type.name,
-      color: obj.stage?.color
-  };
-  }
-  else {
-    // keep scalar value
-  }
-  if (obj.customerType) {
-    obj.customer_type_id = {
-      id: obj.customerType.id,
-      name: obj.customerType.name
-    };
-  }
-  else {
-    // keep scalar value
-  }
-  if (obj.products) {
-    obj.product_id = {
-      id: obj.products.id,
-      name: obj.products.name,
-      category: obj.products.category,
-      price: obj.products.price
-    };
-  }
-  else {
-    // keep scalar valueg
-  }
-  return obj;
+    if (obj.type) {
+        obj.lead_type_id = {
+            id: obj.type.id,
+            name: obj.type.name,
+            color: obj.stage?.color
+        };
+    }
+    else {
+        // keep scalar value
+    }
+    if (obj.customerType) {
+        obj.customer_type_id = {
+            id: obj.customerType.id,
+            name: obj.customerType.name
+        };
+    }
+    else {
+        // keep scalar value
+    }
+    if (obj.products) {
+        obj.product_id = {
+            id: obj.products.id,
+            name: obj.products.name,
+            category: obj.products.category,
+            price: obj.products.price
+        };
+    }
+    else {
+        // keep scalar valueg
+    }
+    return obj;
 }
 
 exports.list = async (req, res) => {
@@ -119,21 +118,21 @@ exports.getById = async (req, res) => {
 };
 
 exports.listByBranch = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const items = await Lead.findAll({
-      where: { branch_id: id },
-      order: [["id", "DESC"]],
-      include: [
-        { model: User, as: "assignee", attributes: ["id", "user_name", "email", "first_name","last_name"] },
-        { model: LeadStage, as: "stage", attributes:  ["id", "name","color"] },
-        { model: LeadSource, as: "source", attributes: ["id", "name"] },
-        { model: LeadType, as: "type", attributes: ["id", "name","color"] },
-        { model: CustomerType, as: "customerType", attributes: ["id", "name"] },
-        { model: Products, as: "products", attributes: ["id", "name", "price"] },
+    try {
+        const { id } = req.params;
+        const items = await Lead.findAll({
+            where: { branch_id: id },
+            order: [["id", "DESC"]],
+            include: [
+                { model: User, as: "assignee", attributes: ["id", "user_name", "email", "first_name", "last_name"] },
+                { model: LeadStage, as: "stage", attributes: ["id", "name", "color"] },
+                { model: LeadSource, as: "source", attributes: ["id", "name"] },
+                { model: LeadType, as: "type", attributes: ["id", "name", "color"] },
+                { model: CustomerType, as: "customerType", attributes: ["id", "name"] },
+                { model: Products, as: "products", attributes: ["id", "name", "price"] },
 
-      ],
-    });
+            ],
+        });
 
         const mapped = (items || []).map(mapLeadPayload);
         res.json({ status: "true", data: mapped });
@@ -147,18 +146,18 @@ exports.listByUser = async (req, res) => {
     try {
         const { id } = req.params;
 
-    const items = await Lead.findAll({
-      where: { assigned_user: id },
-      order: [["id", "DESC"]],
-      include: [
-        { model: User, as: "assignee", attributes: ["id", "user_name", "email","first_name","last_name"] },
-        { model: LeadStage, as: "stage", attributes: ["id", "name","color"] },
-        { model: LeadSource, as: "source", attributes: ["id", "name"] },
-        { model: LeadType, as: "type", attributes: ["id", "name","color"] },
-        { model: CustomerType, as: "customerType", attributes: ["id", "name"] },
-        { model: Products, as: "products", attributes: ["id", "name", "category", "price"] }
-      ],
-    });
+        const items = await Lead.findAll({
+            where: { assigned_user: id },
+            order: [["id", "DESC"]],
+            include: [
+                { model: User, as: "assignee", attributes: ["id", "user_name", "email", "first_name", "last_name"] },
+                { model: LeadStage, as: "stage", attributes: ["id", "name", "color"] },
+                { model: LeadSource, as: "source", attributes: ["id", "name"] },
+                { model: LeadType, as: "type", attributes: ["id", "name", "color"] },
+                { model: CustomerType, as: "customerType", attributes: ["id", "name"] },
+                { model: Products, as: "products", attributes: ["id", "name", "category", "price"] }
+            ],
+        });
 
         const mapped = (items || []).map(mapLeadPayload);
         res.json({ status: "true", data: mapped });
@@ -296,9 +295,9 @@ exports.patch = async (req, res) => {
 
         // Log consolidated activity as a JSON array string
         if (changeDescriptions.length > 0) {
-            
+
             let logFieldName;
-            
+
             if (changeDescriptions.length === 1) {
                 // Case 1: Only one field was updated (e.g., 'lead_stage_id')
                 const singleKey = changeDescriptions[0].key;
@@ -309,7 +308,7 @@ exports.patch = async (req, res) => {
                 // Case 2: Multiple fields were updated
                 logFieldName = 'Multiple Fields Updated';
             }
-            
+
             // Extract only the text messages for the summary JSON array
             const summaryTexts = changeDescriptions.map(d => d.text);
             const summaryData = JSON.stringify(summaryTexts);

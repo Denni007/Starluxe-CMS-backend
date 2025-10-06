@@ -302,7 +302,6 @@ const {
 } = require("../app/models");
 
 const { PERMISSION_MODULES,PERMISSION_ACTIONS, ROLE } = require("../app/constants/constant");
-const ProductCategory = require("../app/models/ProductCategory");
 
 // ------------------------------------
 // Config

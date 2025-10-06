@@ -9,29 +9,29 @@ const { checkPermission } = require("../middleware/checkPermission.js");
 const router = express.Router();
 
 // Create
-router.post("/", /* adminAuth(`${MODULES.User}:${ACTIONS.create}`), */ UsersCtrl.create);
-router.post("/bulk", /* adminAuth(`${MODULES.User}:${ACTIONS.create}`), */ UsersCtrl.bulkCreate);
+router.post("/", UsersCtrl.create);
+router.post("/bulk", UsersCtrl.bulkCreate);
 
 // Read
-router.get("/", isAuth,/* adminAuth(`${MODULES.User}:${ACTIONS.view}`), */ UsersCtrl.list);
-router.get("/check", isAuth,  UsersCtrl.check);
+router.get("/", isAuth, UsersCtrl.list);
+router.get("/check", isAuth, UsersCtrl.check);
 router.get("/:id", isAuth, UsersCtrl.get);
 router.get("/me", isAuth, UsersCtrl.get);
 router.get("/branch/:id", isAuth, UsersCtrl.getBranchUsers);
 
 
-router.get("/:id/memberships", /* adminAuth(`${MODULES.User}:${ACTIONS.view}`), */ UsersCtrl.memberships);
+router.get("/:id/memberships", UsersCtrl.memberships);
 router.get("/:id/memberships/detailed", UsersCtrl.membershipsDetailed);
 
 // Update
-router.put("/:id", isAuth,isAdmin, UsersCtrl.update);
-router.patch("/:id", isAuth,isAdmin, UsersCtrl.patch);
+router.put("/:id", isAuth, isAdmin, UsersCtrl.update);
+router.patch("/:id", isAuth, isAdmin, UsersCtrl.patch);
 
-router.put("/users/bulk", /* adminAuth(`${MODULES.User}:${ACTIONS.update}`), */ UsersCtrl.bulkUpdate);
-router.post("/users/:id/password", /* adminAuth(`${MODULES.User}:${ACTIONS.update}`), */ UsersCtrl.changePassword);
+router.put("/users/bulk", UsersCtrl.bulkUpdate);
+router.post("/users/:id/password", UsersCtrl.changePassword);
 
 // Delete
-router.delete("/users/:id", /* adminAuth(`${MODULES.User}:${ACTIONS.delete}`), */ UsersCtrl.remove);
-router.delete("/users/bulk", /* adminAuth(`${MODULES.User}:${ACTIONS.delete}`), */ UsersCtrl.bulkRemove);
+router.delete("/users/:id", UsersCtrl.remove);
+router.delete("/users/bulk", UsersCtrl.bulkRemove);
 
 module.exports = router;
