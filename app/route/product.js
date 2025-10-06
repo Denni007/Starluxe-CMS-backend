@@ -8,6 +8,8 @@ const router = express.Router();
 router.post("/", isAuth, ProductsCtrl.create);
 router.get("/", isAuth, ProductsCtrl.list);
 router.get("/:id", isAuth, ProductsCtrl.get);
+router.get("/business/:id", isAuth, ProductsCtrl.listByBusiness);
+
 router.patch("/:id", isAuth, ProductsCtrl.update);
 router.delete("/:id", isAuth, ProductsCtrl.remove);
 

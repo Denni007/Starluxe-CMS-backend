@@ -35,7 +35,8 @@ exports.PERMISSION_MODULES = {
     Branches:"Branches",
     Users:"Users",
     Roles:"Roles",
-    
+    Products:"Products",
+
     Permissions:"Permissions"
 }
 

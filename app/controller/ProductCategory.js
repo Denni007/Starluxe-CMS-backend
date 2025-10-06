@@ -1,4 +1,5 @@
 const ProductCategory = require("../models/ProductCategory.js");
+const Business = require("../models/business.js");
 const Products = require("../models/product.js"); // To check for foreign key constraints
 
 /**
@@ -33,6 +34,23 @@ exports.list = async (req, res) => {
 exports.get = async (req, res) => {
   try {
     const item = await ProductCategory.findByPk(req.params.id);
+    if (!item) {
+      return res.status(404).json({ status: "false", message: "ProductCategory not found" });
+    }
+    res.json({ status: "true", data: item });
+  } catch (e) {
+    console.error("ProductCategory get error:", e.message);
+    res.status(400).json({ status: "false", message: e.message });
+  }
+};
+exports.listByBusiness = async (req, res) => {
+  try {
+    const item = await ProductCategory.findAll({
+      where: { business_id: req.params.id },
+      order: [["name", "ASC"]],
+    });
+   
+    
     if (!item) {
       return res.status(404).json({ status: "false", message: "ProductCategory not found" });
     }

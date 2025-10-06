@@ -302,6 +302,7 @@ const {
 } = require("../app/models");
 
 const { PERMISSION_MODULES,PERMISSION_ACTIONS, ROLE } = require("../app/constants/constant");
+const ProductCategory = require("../app/models/ProductCategory");
 
 // ------------------------------------
 // Config
@@ -607,13 +608,13 @@ exports.seedAdmin = async () => {
 
     // (D) Businesses + branches
     const acme = await ensureBusinessWithBranches({
-      name: "Acme Corp",
+      name: "Arcelo Nutri Food",
       industryId: mfg.id,
       creatorId: admin.id,
       t
     });
     const globex = await ensureBusinessWithBranches({
-      name: "Globex Ltd",
+      name: "Peragine pvc Pvt. Ltd",
       industryId: it.id,
       creatorId: admin.id,
       t
@@ -814,19 +815,60 @@ exports.seedAdmin = async () => {
 
     // (J) Tasks Stages
     const taskStages = [
-      "NOT STARTED",
-      "STARTED",
-      "COMPLETED",
-      "DEFERRED",
-      "CANCELLED",
+      "Not Started",
+      "Started",
+      "Completed",
+      "Deferred",
+      "Cancelled"
     ];
     for (const name of taskStages) {
       await TaskStage.findOrCreate({ where: { name }, defaults: { name, description: name }, transaction: t });
     }
 
-    const [notStartedStage] = await TaskStage.findOrCreate({ where: { name: "NOT STARTED" }, transaction: t });
-    const [completedStage] = await TaskStage.findOrCreate({ where: { name: "COMPLETED" }, transaction: t });
+    const [notStartedStage] = await TaskStage.findOrCreate({ where: { name: "Not Started" }, transaction: t });
+    const [completedStage] = await TaskStage.findOrCreate({ where: { name: "Completed" }, transaction: t });
 
+const [pvcCategory] = await ProductCategory.findOrCreate({
+      where: { name: "PVC" },
+      defaults: {
+        business_id: 1,
+        description: "PVC pipes and related products",
+      },
+      transaction: t,
+    });
+
+    const [peanutButterCategory] = await ProductCategory.findOrCreate({
+      where: { name: "Peanut Butter" },
+      defaults: {
+        business_id: 2,
+        description: "Peanut butter and peanut-based products",
+      },
+      transaction: t,
+    });
+
+   
+
+    const [pvcPipeProduct] = await Products.findOrCreate({
+      where: { name: "PVC Pipe 4 Inch" },
+      defaults: {
+        business_id: 1,
+        category_id: pvcCategory.id,
+        price: 12.5,
+        description: "4-inch PVC pipe for plumbing",
+      },
+      transaction: t,
+    });
+
+    const [peanutButterProduct] = await Products.findOrCreate({
+      where: { name: "Crunchy Peanut Butter" },
+      defaults: {
+        business_id: 2,
+        category_id: peanutButterCategory.id,
+        price: 8.99,
+        description: "Natural crunchy peanut butter jar 500g",
+      },
+      transaction: t,
+    });
 
     // (K) Leads and Tasks
     const { hq: acmeHq, west: acmeWest } = acme;
@@ -877,25 +919,25 @@ const [lead2] = await Lead.findOrCreate({
 });
 
 const [lead3] = await Lead.findOrCreate({
-  where: { lead_name: "Test Lead" },
-  defaults: {
-    lead_name: "Test Lead",
-    lead_stage_id: newStage.id,
-    lead_source_id: webSource.id,
-    branch_id: acmeWest.id,
-    contact_number: ["+15559876543"],
-    email: ["test.lead@example.com"],
-    lead_type_id:Warm.id,
-    customer_type_id: Distributor.id,
-    tags: ["high-value", "new-channel"],
-    description: "Lead for West branch.",
-    assigned_user: null,
-    business_name: "Test Biz",
-    dates: { enquiry: "2025-09-12T09:00:00Z" },
-    created_by: admin.id,
-    updated_by: admin.id,
-  },
-  transaction: t,
+  where: { lead_name: "Test Lead" },
+  defaults: {
+    lead_name: "Test Lead",
+    lead_stage_id: newStage.id,
+    lead_source_id: webSource.id,
+    branch_id: acmeWest.id,
+    contact_number: ["+15559876543"],
+    email: ["test.lead@example.com"],
+    lead_type_id:Warm.id,
+    customer_type_id: Distributor.id,
+    tags: ["high-value", "new-channel"],
+    description: "Lead for West branch.",
+    assigned_user: admin.id,
+    business_name: "Test Biz",
+    dates: { enquiry: "2025-09-12T09:00:00Z" },
+    created_by: admin.id,
+    updated_by: admin.id,
+  },
+  transaction: t,
 });
 
 // Create some tasks (destructure results)

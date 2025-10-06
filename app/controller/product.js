@@ -44,7 +44,29 @@ exports.get = async (req, res) => {
     res.status(400).json({ status: "false", message: e.message });
   }
 };
+exports.listByBusiness = async (req, res) => {
+  try {
+    const item = await Products.findAll( {
+      where: { business_id: req.params.id },
+      order: [["name", "ASC"]],
+      include: [{ model: ProductCategory, as: 'category', attributes: ['id', 'name'] }]
+    });
+    if (!item) {
+      return res.status(404).json({ status: "false", message: "Products not found" });
+    }
 
+    // ⚠️ SECURITY CHECK: The client must pass the business context via query parameter for this to work securely.
+    const expectedBusinessId = Number(req.query.business_id);
+    if (expectedBusinessId && item.business_id !== expectedBusinessId) {
+      return res.status(403).json({ status: "false", message: "Access denied: Product outside specified scope." });
+    }
+
+    res.json({ status: "true", data: item });
+  } catch (e) {
+    console.error("Product get error:", e.message);
+    res.status(400).json({ status: "false", message: e.message });
+  }
+};
 
 exports.create = async (req, res) => {
   try {

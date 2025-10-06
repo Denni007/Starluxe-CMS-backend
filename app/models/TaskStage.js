@@ -13,7 +13,10 @@ const TaskStage = sequelize.define("TaskStage", {
     type: DataTypes.STRING,
     allowNull: false, 
   },
-
+  color: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
   description: {
     type: DataTypes.STRING,
     allowNull: true,
