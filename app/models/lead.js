@@ -32,7 +32,7 @@ const Lead = sequelize.define("Lead", {
     amount: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
 
     // Dates
-    dates: { type: DataTypes.JSON, allowNull: false },
+    dates: { type: DataTypes.JSON, allowNull: true },
 
     // Address
     address_1: { type: DataTypes.STRING, allowNull: true },
