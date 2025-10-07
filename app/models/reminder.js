@@ -32,6 +32,10 @@ const Reminder = sequelize.define("Reminder", {
         type: DataTypes.INTEGER,
         allowNull: true,
     },
+    call_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    },
     assigned_user: {
         type: DataTypes.INTEGER,
         allowNull: true,

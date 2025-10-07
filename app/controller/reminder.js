@@ -3,6 +3,7 @@ const Reminder = require("../models/reminder.js");
 const User = require("../models/user.js");
 const Lead = require("../models/lead.js");
 const Task = require("../models/task.js");
+const Call = require("../models/call.js");
 const LeadActivityLog = require("../models/LeadActivityLog.js");
 
 const getLogValue = (val) => {
@@ -14,6 +15,15 @@ const jsonSummary = (messages) => JSON.stringify(Array.isArray(messages) ? messa
 
 function mapReminderPayload(reminderInstance) { /* ... (remains unchanged) ... */
     const obj = reminderInstance.toJSON();
+
+    if (obj.call) {
+        obj.call_id = {
+            id: obj.call.id,
+            subject: obj.call.subject,
+            call_type: obj.call.call_type,
+        };
+    }
+    delete obj.call;
 
     if (obj.lead) {
         obj.lead_id = {
@@ -49,7 +59,7 @@ exports.list = async (req, res) => {
         const items = await Reminder.findAll({
             order: [["id", "DESC"]],
             include: [
-
+                { model: Call, as: "call", attributes: ["id", "subject", "call_type"] },
                 { model: Lead, as: "lead", attributes: ["id", "lead_name"] },
                 { model: Task, as: "task", attributes: ["id", "task_name"] },
                 { model: User, as: "assignee", attributes: ["id", "user_name", "email"] },
@@ -71,7 +81,7 @@ exports.getById = async (req, res) => {
     try {
         const item = await Reminder.findByPk(req.params.id, {
             include: [
-
+                { model: Call, as: "call", attributes: ["id", "subject", "call_type"] },
                 { model: Lead, as: "lead", attributes: ["id", "lead_name"] },
                 { model: Task, as: "task", attributes: ["id", "task_name"] },
                 { model: User, as: "assignee", attributes: ["id", "user_name", "email"] },
@@ -100,6 +110,7 @@ exports.listByBranch = async (req, res) => {
             where: { branch_id: branchId },
             order: [["id", "DESC"]],
             include: [
+                { model: Call, as: "call", attributes: ["id", "subject", "call_type"] },
                 { model: Lead, as: "lead", attributes: ["id", "lead_name"] },
                 { model: Task, as: "task", attributes: ["id", "task_name"] },
                 { model: User, as: "assignee", attributes: ["id", "user_name", "email"] },
@@ -123,7 +134,7 @@ exports.create = async (req, res) => {
 
         const {
             reminder_name, reminder_date, reminder_time, reminder_unit, reminder_value,
-            branch_id, lead_id, task_id, assigned_user,
+            branch_id, lead_id, task_id, call_id, assigned_user,
         } = req.body;
 
         if (!reminder_name || !reminder_date || !reminder_time || !reminder_unit || !reminder_value || !branch_id) {
@@ -135,7 +146,7 @@ exports.create = async (req, res) => {
 
         const reminder = await Reminder.create({
             reminder_name, reminder_date, reminder_time, reminder_unit, reminder_value,
-            branch_id, lead_id, task_id, assigned_user,
+            branch_id, lead_id, task_id, assigned_user,call_id,
             created_by: userId, updated_by: userId,
         });
 
@@ -171,7 +182,7 @@ exports.patch = async (req, res) => {
         // 🔑 All fields that can be updated in the Reminder model
         const fieldsToCheck = [
             "reminder_name", "reminder_date", "reminder_time", "reminder_unit", "reminder_value",
-            "branch_id", "lead_id", "task_id", "assigned_user",
+            "branch_id", "lead_id", "task_id", "assigned_user","call_id"
         ];
 
         // --- 1. Build the 'up' object and generate summary descriptions ---
