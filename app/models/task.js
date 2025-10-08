@@ -37,6 +37,10 @@ const Task = sequelize.define("Task", {
             return tomorrow;
         },
     },
+    call_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    },
     reminder_id: {
         type: DataTypes.INTEGER,
         allowNull: true,

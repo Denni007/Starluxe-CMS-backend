@@ -293,12 +293,12 @@ const {
   Task,
   Reminder,
   CallResponseStage,
-  Call,
+  Call, // 🔑 Call model imported
   LeadType,
   Products,
   CustomerType,
-  ProductCategory,
-  LeadActivityLog, 
+  ProductCategory, // 🔑 ProductCategory imported
+  LeadActivityLog, // 🔑 LeadActivityLog imported
 } = require("../app/models");
 
 const { PERMISSION_MODULES,PERMISSION_ACTIONS, ROLE } = require("../app/constants/constant");
@@ -789,19 +789,19 @@ exports.seedAdmin = async () => {
     //   await LeadStage.findOrCreate({ where: { name }, defaults: { name, description: name }, transaction: t });
     // }
     const leadType= [{
-  "name":"Hot",
-  "description":"Hot",
-  "color":"#3498DB"
+  "name":"Hot",
+  "description":"Hot",
+  "color":"#3498DB"
 },
 {
-  "name":"Warm",
-  "description":"Warm",
-  "color":"#1ABC9C"
+  "name":"Warm",
+  "description":"Warm",
+  "color":"#1ABC9C"
 },
 {
-  "name":"Cold",
-  "description":"Cold",
-  "color":"#9B59B6"
+  "name":"Cold",
+  "description":"Cold",
+  "color":"#9B59B6"
 }
     ];
     for (const [i, stage] of leadType.entries()) {
@@ -829,7 +829,7 @@ exports.seedAdmin = async () => {
       "Started",
       "Completed",
       "Deferred",
-      "Cancelled"
+      "Cancelled"
     ];
     for (const name of taskStages) {
       await TaskStage.findOrCreate({ where: { name }, defaults: { name, description: name }, transaction: t });
@@ -839,46 +839,46 @@ exports.seedAdmin = async () => {
     const [completedStage] = await TaskStage.findOrCreate({ where: { name: "Completed" }, transaction: t });
 
 const [pvcCategory] = await ProductCategory.findOrCreate({
-      where: { name: "PVC" },
-      defaults: {
-        business_id: 1,
-        description: "PVC pipes and related products",
-      },
-      transaction: t,
-    });
+      where: { name: "PVC" },
+      defaults: {
+        business_id: acme.biz.id,
+        description: "PVC pipes and related products",
+      },
+      transaction: t,
+    });
 
-    const [peanutButterCategory] = await ProductCategory.findOrCreate({
-      where: { name: "Peanut Butter" },
-      defaults: {
-        business_id: 2,
-        description: "Peanut butter and peanut-based products",
-      },
-      transaction: t,
-    });
+    const [peanutButterCategory] = await ProductCategory.findOrCreate({
+      where: { name: "Peanut Butter" },
+      defaults: {
+        business_id: globex.biz.id,
+        description: "Peanut butter and peanut-based products",
+      },
+      transaction: t,
+    });
 
-   
+   
 
-    const [pvcPipeProduct] = await Products.findOrCreate({
-      where: { name: "PVC Pipe 4 Inch" },
-      defaults: {
-        business_id: 1,
-        category_id: pvcCategory.id,
-        price: 12.5,
-        description: "4-inch PVC pipe for plumbing",
-      },
-      transaction: t,
-    });
+    const [pvcPipeProduct] = await Products.findOrCreate({
+      where: { name: "PVC Pipe 4 Inch" },
+      defaults: {
+        business_id: acme.biz.id,
+        category_id: pvcCategory.id,
+        price: 12.5,
+        description: "4-inch PVC pipe for plumbing",
+      },
+      transaction: t,
+    });
 
-    const [peanutButterProduct] = await Products.findOrCreate({
-      where: { name: "Crunchy Peanut Butter" },
-      defaults: {
-        business_id: 2,
-        category_id: peanutButterCategory.id,
-        price: 8.99,
-        description: "Natural crunchy peanut butter jar 500g",
-      },
-      transaction: t,
-    });
+    const [peanutButterProduct] = await Products.findOrCreate({
+      where: { name: "Crunchy Peanut Butter" },
+      defaults: {
+        business_id: globex.biz.id,
+        category_id: peanutButterCategory.id,
+        price: 8.99,
+        description: "Natural crunchy peanut butter jar 500g",
+      },
+      transaction: t,
+    });
 
     // (K) Leads and Tasks
     const { hq: acmeHq, west: acmeWest } = acme;
@@ -929,26 +929,75 @@ const [lead2] = await Lead.findOrCreate({
 });
 
 const [lead3] = await Lead.findOrCreate({
-  where: { lead_name: "Test Lead" },
-  defaults: {
-    lead_name: "Test Lead",
-    lead_stage_id: newStage.id,
-    lead_source_id: webSource.id,
-    branch_id: acmeWest.id,
-    contact_number: ["+15559876543"],
-    email: ["test.lead@example.com"],
-    lead_type_id:Warm.id,
-    customer_type_id: Distributor.id,
-    tags: ["high-value", "new-channel"],
-    description: "Lead for West branch.",
-    assigned_user: admin.id,
-    business_name: "Test Biz",
-    dates: { enquiry: "2025-09-12T09:00:00Z" },
-    created_by: admin.id,
-    updated_by: admin.id,
-  },
-  transaction: t,
+  where: { lead_name: "Test Lead" },
+  defaults: {
+    lead_name: "Test Lead",
+    lead_stage_id: newStage.id,
+    lead_source_id: webSource.id,
+    branch_id: acmeWest.id,
+    contact_number: ["+15559876543"],
+    email: ["test.lead@example.com"],
+    lead_type_id:Warm.id,
+    customer_type_id: Distributor.id,
+    tags: ["high-value", "new-channel"],
+    description: "Lead for West branch.",
+    assigned_user: admin.id,
+    business_name: "Test Biz",
+    dates: { enquiry: "2025-09-12T09:00:00Z" },
+    created_by: admin.id,
+    updated_by: admin.id,
+  },
+  transaction: t,
 });
+
+// Create some calls (needed for task/reminder linking)
+const [call1] = await Call.findOrCreate({
+    where: { subject: "Initial Contact Call" },
+    defaults: {
+        subject: "Initial Contact Call",
+        branch_id: acmeHq.id,
+        start_time: "2025-10-01T10:00:00Z",
+        call_type: "Log",
+        duration: 600,
+        lead_id: lead1.id,
+        assigned_user: manager.id,
+        created_by: admin.id,
+        updated_by: admin.id,
+    },
+    transaction: t,
+});
+
+const [call2] = await Call.findOrCreate({
+    where: { subject: "Follow-up Strategy Session" },
+    defaults: {
+        subject: "Follow-up Strategy Session",
+        branch_id: acmeHq.id,
+        start_time: "2025-10-20T14:00:00Z",
+        call_type: "Schedule",
+        lead_id: lead1.id,
+        assigned_user: salesA.id,
+        created_by: admin.id,
+        updated_by: admin.id,
+    },
+    transaction: t,
+});
+
+const [call3] = await Call.findOrCreate({
+    where: { subject: "Globex Partnership Intro" },
+    defaults: {
+        subject: "Globex Partnership Intro",
+        branch_id: globexHq.id,
+        start_time: "2025-10-05T11:30:00Z",
+        call_type: "Log",
+        duration: 900,
+        lead_id: lead2.id,
+        assigned_user: manager.id,
+        created_by: admin.id,
+        updated_by: admin.id,
+    },
+    transaction: t,
+});
+
 
 // Create some tasks (destructure results)
 const [task1] = await Task.findOrCreate({
@@ -960,6 +1009,7 @@ const [task1] = await Task.findOrCreate({
     priority: "High",
     assigned_user: manager.id,
     lead_id: lead1.id,
+    call_id: call2.id, // 🔑 Link task to a scheduled call
     created_by: admin.id,
     updated_by: admin.id,
   },
@@ -1017,6 +1067,7 @@ const [task1Reminder] = await Reminder.findOrCreate({
     branch_id: acmeHq.id,
     lead_id: lead1.id,
     task_id: task1.id,
+    call_id: call2.id, // 🔑 Link reminder to the same call
     assigned_user: manager.id,
     created_by: admin.id,
     updated_by: admin.id,
@@ -1043,99 +1094,99 @@ const [lead2Reminder] = await Reminder.findOrCreate({
 });
 // ⬅️ START NEW LOGIC BLOCK HERE
 
-    // Helper to log summary as JSON array string
-    // NOTE: This helper should be defined before use in the seeder file.
-    const jsonSummary = (messages) => JSON.stringify(Array.isArray(messages) ? messages : [messages]);
+    // Helper to log summary as JSON array string
+    // NOTE: This helper should be defined before use in the seeder file.
+    const jsonSummary = (messages) => JSON.stringify(Array.isArray(messages) ? messages : [messages]);
 
-    // Ensure Product Categories and Products are created before logging
-    // Find business instances from section (D)
-    const acmeBizId = acme.biz.id;
-    
-    const [pipeCat] = await ProductCategory.findOrCreate({
-        where: { name: "Piping Solutions", business_id: acmeBizId },
-        defaults: { name: "Piping Solutions", business_id: acmeBizId, description: "PVC and metal pipe solutions" },
-        transaction: t
-    });
-    const [valveCat] = await ProductCategory.findOrCreate({
-        where: { name: "Fittings & Valves", business_id: acmeBizId },
-        defaults: { name: "Fittings & Valves", business_id: acmeBizId, description: "Elbows, reducers, and ball valves" },
-        transaction: t
-    });
-    
-    const [pvcPipe] = await Products.findOrCreate({
-        where: { name: "Standard PVC Pipe (10ft)", business_id: acmeBizId },
-        defaults: {
-            name: "Standard PVC Pipe (10ft)",
-            business_id: acmeBizId,
-            category_id: pipeCat.id,
-            price: 125.50,
-            description: "10-foot schedule 40 PVC pipe."
-        },
-        transaction: t
-    });
-    const [ballValve] = await Products.findOrCreate({
-        where: { name: "Brass Ball Valve (1 inch)", business_id: acmeBizId },
-        defaults: {
-            name: "Brass Ball Valve (1 inch)",
-            business_id: acmeBizId,
-            category_id: valveCat.id,
-            price: 350.00,
-            description: "High-pressure rated 1-inch brass valve."
-        },
-        transaction: t
-    });
+    // Ensure Product Categories and Products are created before logging
+    // Find business instances from section (D)
+    const acmeBizId = acme.biz.id;
+    
+    const [pipeCat] = await ProductCategory.findOrCreate({
+        where: { name: "Piping Solutions", business_id: acmeBizId },
+        defaults: { name: "Piping Solutions", business_id: acmeBizId, description: "PVC and metal pipe solutions" },
+        transaction: t
+    });
+    const [valveCat] = await ProductCategory.findOrCreate({
+        where: { name: "Fittings & Valves", business_id: acmeBizId },
+        defaults: { name: "Fittings & Valves", business_id: acmeBizId, description: "Elbows, reducers, and ball valves" },
+        transaction: t
+    });
+    
+    const [pvcPipe] = await Products.findOrCreate({
+        where: { name: "Standard PVC Pipe (10ft)", business_id: acmeBizId },
+        defaults: {
+            name: "Standard PVC Pipe (10ft)",
+            business_id: acmeBizId,
+            category_id: pipeCat.id,
+            price: 125.50,
+            description: "10-foot schedule 40 PVC pipe."
+        },
+        transaction: t
+    });
+    const [ballValve] = await Products.findOrCreate({
+        where: { name: "Brass Ball Valve (1 inch)", business_id: acmeBizId },
+        defaults: {
+            name: "Brass Ball Valve (1 inch)",
+            business_id: acmeBizId,
+            category_id: valveCat.id,
+            price: 350.00,
+            description: "High-pressure rated 1-inch brass valve."
+        },
+        transaction: t
+    });
 
-    // (P) Lead Activity Logs
-    
-    // Log 1: Creation (Since the lead was created earlier, we log a mock creation event)
-    await LeadActivityLog.findOrCreate({
-        where: { lead_id: lead1.id, field_name: 'Creation' },
-        defaults: {
-            lead_id: lead1.id,
-            user_id: admin.id,
-            branch_id: acmeHq.id,
-            field_name: 'Creation',
-            summary: jsonSummary([`Lead **${lead1.lead_name}** created`]), // Array wrapper added for consistency
-        },
-        transaction: t
-    });
+    // (P) Lead Activity Logs
+    
+    // Log 1: Creation (Since the lead was created earlier, we log a mock creation event)
+    await LeadActivityLog.findOrCreate({
+        where: { lead_id: lead1.id, field_name: 'Creation' },
+        defaults: {
+            lead_id: lead1.id,
+            user_id: admin.id,
+            branch_id: acmeHq.id,
+            field_name: 'Creation',
+            summary: jsonSummary([`Lead **${lead1.lead_name}** created`]), // Array wrapper added for consistency
+        },
+        transaction: t
+    });
 
-    // Log 2: Update - Single Field Change (e.g., Stage Change)
-    await LeadActivityLog.findOrCreate({
-        where: { lead_id: lead1.id, field_name: 'Lead Stage Updated' },
-        defaults: {
-            lead_id: lead1.id,
-            user_id: manager.id,
-            branch_id: acmeHq.id,
-            field_name: 'Lead Stage Updated',
-            // 🔑 CORRECTED: Using .name property of LeadStage model
-            summary: jsonSummary([`Updated **lead stage id** from *${newStage.name}* to *${inProcessStage.name}*`]),
-        },
-        transaction: t
-    });
-    
-    // Log 3: Update - Multiple Fields Change (e.g., Assigned User and Product ID change)
-    const managerFullName = `${manager.first_name} ${manager.last_name}`;
-    const salesAFullName = `${salesA.first_name} ${salesA.last_name}`;
+    // Log 2: Update - Single Field Change (e.g., Stage Change)
+    await LeadActivityLog.findOrCreate({
+        where: { lead_id: lead1.id, field_name: 'Lead Stage Updated' },
+        defaults: {
+            lead_id: lead1.id,
+            user_id: manager.id,
+            branch_id: acmeHq.id,
+            field_name: 'Lead Stage Updated',
+            // 🔑 CORRECTED: Using .name property of LeadStage model
+            summary: jsonSummary([`Updated **lead stage id** from *${newStage.name}* to *${inProcessStage.name}*`]),
+        },
+        transaction: t
+    });
+    
+    // Log 3: Update - Multiple Fields Change (e.g., Assigned User and Product ID change)
+    const managerFullName = `${manager.first_name} ${manager.last_name}`;
+    const salesAFullName = `${salesA.first_name} ${salesA.last_name}`;
 
-    const summaryArray = [
-        // 🔑 CORRECTED: Using full names for User objects
-        `Updated **assigned user** from *${managerFullName}* to *${salesAFullName}*`,
-        // 🔑 CORRECTED: Using full name for Product object
-        `Added **product id** as *${pvcPipe.name}*`
-    ];
+    const summaryArray = [
+        // 🔑 CORRECTED: Using full names for User objects
+        `Updated **assigned user** from *${managerFullName}* to *${salesAFullName}*`,
+        // 🔑 CORRECTED: Using full name for Product object
+        `Added **product id** as *${pvcPipe.name}*`
+    ];
 
-    await LeadActivityLog.findOrCreate({
-        where: { lead_id: lead1.id, field_name: 'Multiple Fields Updated' },
-        defaults: {
-            lead_id: lead1.id,
-            user_id: admin.id,
-            branch_id: acmeHq.id,
-            field_name: 'Multiple Fields Updated',
-            summary: jsonSummary(summaryArray),
-        },
-        transaction: t
-    });
+    await LeadActivityLog.findOrCreate({
+        where: { lead_id: lead1.id, field_name: 'Multiple Fields Updated' },
+        defaults: {
+            lead_id: lead1.id,
+            user_id: admin.id,
+            branch_id: acmeHq.id,
+            field_name: 'Multiple Fields Updated',
+            summary: jsonSummary(summaryArray),
+        },
+        transaction: t
+    });
 
 // ⬅️ END NEW LOGIC BLOCK HERE
 }); // Closes the sequelize.transaction(async (t) => {

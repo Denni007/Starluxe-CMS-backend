@@ -825,45 +825,53 @@ exports.patch = async (req, res) => {
     }
 };
 
-// Delete a call
+
 exports.remove = async (req, res) => {
     try {
-        const userId = req.user?.id || null; // Capture user ID
+        const userId = req.user?.id || null; 
         const call = await Call.findByPk(req.params.id);
 
         if (!call) return res.status(404).json({ status: "false", message: "Call not found" });
 
-        // Use a transaction for atomic deletion of Call and Reminder, plus logging
+        // --- 1. PROCEED WITH ATOMIC DELETION AND LOGGING ---
         await sequelize.transaction(async (t) => {
 
-            // 🔑 LOGGING 1: Log Call Deletion if associated with a Lead
-            if (call.lead_id) {
-                const message = [`Call **${call.subject}** was permanently deleted.`];
+          
+            await Task.update(
+                { call_id: null },
+                { where: { call_id: call.id }, transaction: t }
+            );
 
-                await LeadActivityLog.create({
-                    lead_id: call.lead_id,
-                    user_id: userId,
-                    branch_id: call.branch_id,
-                    field_name: 'Call Deleted',
-                    summary: jsonSummary(message),
-                }, { transaction: t });
+            // Log Call Deletion
+            if (call.lead_id) {
+                 const message = [`Call **${call.subject}** was permanently deleted. Linked Item were unlinked.`];
+                 await LeadActivityLog.create({
+                     lead_id: call.lead_id,
+                     user_id: userId,
+                     branch_id: call.branch_id,
+                     field_name: 'Call Deleted',
+                     summary: jsonSummary(message),
+                 }, { transaction: t });
             }
 
-            // 2. Also delete the associated reminder if it exists
+            // Also delete the associated reminder (using transaction `t`)
             if (call.reminder_id) {
                 await Reminder.destroy({ where: { id: call.reminder_id }, transaction: t });
             }
 
-            // 3. Destroy the call record
+            // Destroy the call record
             await call.destroy({ transaction: t });
         });
 
-        res.json({ status: "true", message: "Deleted" });
+        res.json({ status: "true", message: "Deleted and linked Tasks unlinked successfully." });
 
     } catch (e) {
         console.error("Call remove error:", e);
-        // If the error is a Foreign Key constraint from another table (e.g., Reports), 
-        // the transaction will automatically rollback.
+        // The catch block handles any external dependencies (e.g., Reports, Quotations) 
+        // that still have RESTRICT set, using the professional error handling previously implemented.
+        if (e.message.includes("Cannot delete this Call because")) {
+             return res.status(409).json({ status: "false", message: e.message, error_type: "ForeignKeyConstraintError" });
+        }
         res.status(400).json({ status: "false", message: e.message });
     }
 };

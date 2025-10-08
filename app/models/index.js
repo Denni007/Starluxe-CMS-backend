@@ -71,6 +71,9 @@ User.hasMany(Task, { foreignKey: "assigned_user", as: "tasks" });
 Task.belongsTo(Lead, { foreignKey: "lead_id", as: "lead" });
 Lead.hasMany(Task, { foreignKey: "lead_id", as: "tasks" });
 
+Task.belongsTo(Call, { foreignKey: 'call_id', as: 'call' });
+Call.hasMany(Task, { foreignKey: 'call_id', as: 'tasks' }); 
+
 
 // reminders ↔ User, Lead, Task
 Reminder.belongsTo(User, { foreignKey: "assigned_user", as: "assignee" });

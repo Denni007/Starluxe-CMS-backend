@@ -32,8 +32,4 @@ router.use("/reminders", require("./reminder"));
 router.use("/call-response-stage", require("./CallResponseStage"));
 router.use("/calls", require("./call"));
 
-ß
-
-
-
 module.exports = router;
