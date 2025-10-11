@@ -1,14 +1,9 @@
-// app/controller/role.controller.js
-// CommonJS + unified responses { status: "true"/"false", ... }
-
 const { Op } = require("sequelize");
 const { RolePermission, Permission, UserBranchRole, Role, Branch, Business, User } = require("../models");
 
 const sequelize = require("../models").sequelize;
-// const { Role, UserBranchRole, Branch: BranchModel } = db;
 const { ROLE } = require("../constants/constant");
-const e = require("express");
-// If you have a constants file, use it; fallback to a safe default
+
 async function ensureRoleOnBranch({ branchId, roleName, userId, t }) {
   const [role, created] = await Role.findOrCreate({
     where: { branch_id: branchId, name: roleName },
@@ -21,9 +16,7 @@ async function ensureRoleOnBranch({ branchId, roleName, userId, t }) {
     transaction: t,
   });
 
-  // 👇 If it's newly created, attach default permissions
   if (created) {
-    // Get default permissions for this role
     const defaultPerms = await Permission.findAll({
       attributes: ["id"],
       transaction: t,
@@ -43,44 +36,39 @@ async function ensureRoleOnBranch({ branchId, roleName, userId, t }) {
   return role;
 }
 
-
 async function getBranchIdsForBusiness(businessId, t) {
   const rows = await Branch.findAll({
     where: { business_id: businessId },
     attributes: ["id"],
     transaction: t,
   });
-  // console.log(rows.map(r => r))
-  
+
   return rows.map(r => r.id);
 }
 
-
 async function findUserRoleNameInBusiness({ userId, businessId, t }) {
-  // All branches under the business
-    const branchIds = await getBranchIdsForBusiness(businessId, t);
-    if (!branchIds.length) return null;
-    // console.log(branchIds);
-    const links = await UserBranchRole.findAll({
-      where: {
-        user_id: userId,
-        branch_id: { [Op.in]: branchIds },
-      },
-      attributes: ["id", "role_id", "branch_id"],
-      order: [
-        ["id", "DESC"], // robust even if you don't have createdAt
-      ],
-      transaction: t,
-    });
-    if (!links.length) return null;
-  
-    const chosen = links[0];
-    const role = await Role.findByPk(chosen.role_id, {
-      attributes: ["name"],
-      transaction: t,
-    });
-    return role?.name || null;
-  }
+  const branchIds = await getBranchIdsForBusiness(businessId, t);
+  if (!branchIds.length) return null;
+  const links = await UserBranchRole.findAll({
+    where: {
+      user_id: userId,
+      branch_id: { [Op.in]: branchIds },
+    },
+    attributes: ["id", "role_id", "branch_id"],
+    order: [
+      ["id", "DESC"], 
+    ],
+    transaction: t,
+  });
+  if (!links.length) return null;
+
+  const chosen = links[0];
+  const role = await Role.findByPk(chosen.role_id, {
+    attributes: ["name"],
+    transaction: t,
+  });
+  return role?.name || null;
+}
 
 exports.list = async (req, res) => {
   try {
@@ -90,7 +78,6 @@ exports.list = async (req, res) => {
     res.status(400).json({ status: "false", message: e.message });
   }
 };
-
 
 exports.get = async (req, res) => {
   try {
@@ -112,7 +99,6 @@ exports.create = async (req, res) => {
       business_id
     } = req.body;
 
-    // Basic validation
     if (!userId) {
       await t.rollback();
       return res.status(401).json({ status: "false", message: "Unauthorized" });
@@ -129,14 +115,12 @@ exports.create = async (req, res) => {
       });
     }
 
-    // Ensure business exists
     const biz = await Business.findByPk(business_id, { transaction: t });
     if (!biz) {
       await t.rollback();
       return res.status(404).json({ status: "false", message: "Business not found" });
     }
 
-    // Create the branch
     const branch = await Branch.create({
       name,
       email,
@@ -153,11 +137,6 @@ exports.create = async (req, res) => {
       updated_by: userId,
     }, { transaction: t });
 
-    // ---------------------------
-    // Role assignment section
-    // ---------------------------
-
-    // 1) Resolve system super admin (prefer id=1; else first is_admin=true)
     let sysAdminId = 1;
     const sysAdminById1 = await User.findOne({
       where: { id: 1, is_admin: true },
@@ -174,7 +153,6 @@ exports.create = async (req, res) => {
       if (anySysAdmin?.id) sysAdminId = anySysAdmin.id;
     }
 
-    // 2) Ensure SUPER_ADMIN role exists on this branch and attach system super admin
     const superAdminRole = await ensureRoleOnBranch({
       branchId: branch.id,
       roleName: ROLE.SUPER_ADMIN || "Super Admin",
@@ -192,7 +170,6 @@ exports.create = async (req, res) => {
       transaction: t,
     });
 
-    // 3) Creator role: reuse prior role in this business; else ADMIN
     let creatorRoleName = ROLE.ADMIN || "Admin";
     const priorRoleName = await findUserRoleNameInBusiness({
       userId,
@@ -241,17 +218,16 @@ exports.create = async (req, res) => {
             role_name: ROLE.SUPER_ADMIN || "Super Admin",
             link_id: sysadminLink.id,
           },
-          creator: creatorAssigned, // null if creator === sysadmin
+          creator: creatorAssigned,
         },
       },
     });
   } catch (e) {
-    // safe rollback if still open
     try {
       if (t && t.finished !== "commit" && t.finished !== "rollback") {
         await t.rollback();
       }
-    } catch (_) {}
+    } catch (_) { }
 
     console.error("❌ Branch create error:", e);
     if (e.name === "SequelizeForeignKeyConstraintError") {
@@ -277,7 +253,6 @@ exports.listByBusiness = async (req, res) => {
   }
 };
 
-
 exports.update = async (req, res) => {
   try {
     const item = await Branch.findByPk(req.params.id);
@@ -289,14 +264,13 @@ exports.update = async (req, res) => {
   }
 };
 
-
-
 exports.remove = async (req, res) => {
   const branchId = req.params.id;
 
   try {
     const result = await sequelize.transaction(async (t) => {
-      // 1) Find the branch
+
+
       const branch = await Branch.findByPk(branchId, { transaction: t });
       if (!branch) {
         const err = new Error("Branch not found");
@@ -304,7 +278,6 @@ exports.remove = async (req, res) => {
         throw err;
       }
 
-      // 2) Find all roles for this branch
       const roles = await Role.findAll({
         where: { branch_id: branchId },
         transaction: t,
@@ -312,29 +285,23 @@ exports.remove = async (req, res) => {
       const roleIds = roles.map((r) => r.id);
 
       if (roleIds.length) {
-        // 2a) Delete role_permissions for these roles
         await RolePermission.destroy({
           where: { role_id: roleIds },
           transaction: t,
         });
 
-        // 2b) Delete roles themselves
         await Role.destroy({
           where: { id: roleIds },
           transaction: t,
         });
       }
 
-      // 3) Delete user-branch-role memberships
       await UserBranchRole.destroy({
         where: { branch_id: branchId },
         transaction: t,
       });
 
-      // 4) (Optional) If you want to remove branch-scoped permissions too
-      // await Permission.destroy({ where: { branch_id: branchId }, transaction: t });
 
-      // 5) Finally delete the branch
       await branch.destroy({ transaction: t });
 
       return { deleted: true };

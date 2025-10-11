@@ -15,70 +15,39 @@ const getLogValue = (val) => {
 };
 
 function mapLeadPayload(leadInstance) {
-    // toJSON to get plain object
     const obj = leadInstance.toJSON();
 
-    // Map relations (assignee, stage, source, type, customerType, products)
     if (obj.assignee) {
         obj.assigned_user = { id: obj.assignee.id, user_name: obj.assignee.user_name, email: obj.assignee.email, first_name: obj.assignee.first_name, last_name: obj.assignee.last_name };
     }
     delete obj.assignee;
 
-    // map stage -> lead_stage_id
-    if (obj.stage) {
-        obj.lead_stage_id = {
-            id: obj.stage.id,
-            name: obj.stage.name,
-            color: obj.stage?.color
-        };
-    } else {
-        // keep existing scalar lead_stage_id if no relation
-    }
+    if (obj.stage) { obj.lead_stage_id = { id: obj.stage.id, name: obj.stage.name, color: obj.stage?.color }; } else { }
     delete obj.stage;
 
-    if (obj.source) {
-        obj.lead_source_id = { id: obj.source.id, name: obj.source.name };
-    }
+    if (obj.source) { obj.lead_source_id = { id: obj.source.id, name: obj.source.name }; }
     delete obj.source;
 
-    if (obj.type) {
-        obj.lead_type_id = {
-            id: obj.type.id,
-            name: obj.type.name,
-            color: obj.stage?.color
-        };
-    }
-    else {
-        // keep scalar value
-    }
-    if (obj.customerType) {
-        obj.customer_type_id = {
-            id: obj.customerType.id,
-            name: obj.customerType.name
-        };
-    }
-    else {
-        // keep scalar value
-    }
-    if (obj.products) {
-        obj.product_id = {
-            id: obj.products.id,
-            name: obj.products.name,
-            category: obj.products.category,
-            price: obj.products.price
-        };
-    }
-    else {
-        // keep scalar valueg
-    }
+    if (obj.type) { obj.lead_type_id = { id: obj.type.id, name: obj.type.name, color: obj.type?.color }; } else { }
+    delete obj.type;
+
+    if (obj.customerType) { obj.customer_type_id = { id: obj.customerType.id, name: obj.customerType.name }; } else { }
+    delete obj.customerType;
+
+    if (obj.products) { obj.product_id = { id: obj.products.id, name: obj.products.name, category: obj.products.category, price: obj.products.price }; } else { }
+    delete obj.products;
+
     return obj;
 }
+
+const leadAttributes = { exclude: ['isDelete'] };
 
 exports.list = async (req, res) => {
     try {
         const items = await Lead.findAll({
+            attributes: leadAttributes,
             order: [["id", "DESC"]],
-            // ❌ Removed log inclusion for performance
+            where: { isDelete: false },
         });
 
         if (!items) return res.status(404).json({ status: "false", message: "Not found" });
@@ -94,6 +63,8 @@ exports.list = async (req, res) => {
 exports.getById = async (req, res) => {
     try {
         const item = await Lead.findByPk(req.params.id, {
+            attributes: leadAttributes,
+            where: { isDelete: false },
             include: [
                 { model: User, as: "assignee" },
                 { model: LeadStage, as: "stage" },
@@ -101,7 +72,6 @@ exports.getById = async (req, res) => {
                 { model: LeadType, as: "type" },
                 { model: CustomerType, as: "customerType" },
                 { model: Products, as: "products" },
-                // ⚠️ Keep Log Include here for detail view 
                 { model: LeadActivityLog, as: "activities", attributes: ["id", "user_id", "branch_id", "field_name", "summary", "created_at"] },
             ],
             order: [[{ model: LeadActivityLog, as: 'activities' }, 'created_at', 'DESC']],
@@ -121,7 +91,8 @@ exports.listByBranch = async (req, res) => {
     try {
         const { id } = req.params;
         const items = await Lead.findAll({
-            where: { branch_id: id },
+            attributes: leadAttributes,
+            where: { branch_id: id, isDelete: false },
             order: [["id", "DESC"]],
             include: [
                 { model: User, as: "assignee", attributes: ["id", "user_name", "email", "first_name", "last_name"] },
@@ -147,7 +118,8 @@ exports.listByUser = async (req, res) => {
         const { id } = req.params;
 
         const items = await Lead.findAll({
-            where: { assigned_user: id },
+            attributes: leadAttributes,
+            where: { assigned_user: id, isDelete: false },
             order: [["id", "DESC"]],
             include: [
                 { model: User, as: "assignee", attributes: ["id", "user_name", "email", "first_name", "last_name"] },
@@ -167,7 +139,6 @@ exports.listByUser = async (req, res) => {
     }
 };
 
-// POST /leads (create)
 exports.create = async (req, res) => {
     try {
         const userId = req.user?.id || null;
@@ -179,7 +150,6 @@ exports.create = async (req, res) => {
             dates, address_1, landmark, city, state, country, pincode,
         } = req.body;
 
-        // Minimal validations
         if (!lead_name || !lead_source_id || !branch_id || !contact_number || !dates) {
             return res.status(400).json({ status: "false", message: "lead_name, lead_source_id, branch_id, contact_number, dates are required" });
         }
@@ -209,20 +179,21 @@ exports.create = async (req, res) => {
         await LeadActivityLog.create({
             lead_id: lead.id,
             user_id: userId,
-            branch_id: lead.branch_id, // ADDED: branch_id
+            branch_id: lead.branch_id,
             field_name: 'Creation',
             old_value: null, new_value: null,
-            summary: JSON.stringify(creationSummary), // Save as JSON array string
+            summary: JSON.stringify(creationSummary),
         });
 
-        res.status(201).json({ status: "true", data: lead });
+        const finalLead = lead.toJSON();
+        delete finalLead.isDelete;
+
+        res.status(201).json({ status: "true", data: finalLead });
     } catch (e) {
         res.status(400).json({ status: "false", message: e.message });
     }
 };
 
-
-// PATCH /leads/:id  (partial update)
 exports.patch = async (req, res) => {
     try {
         const userId = req.user?.id || null;
@@ -230,9 +201,8 @@ exports.patch = async (req, res) => {
         if (!lead) return res.status(404).json({ status: "false", message: "Lead not found" });
 
         const up = {};
-        const changeDescriptions = []; // Array to store formatted text strings
+        const changeDescriptions = [];
 
-        // CRITICAL FIX: Ensure ALL fields from the model that need tracking are listed here.
         const fieldsToCheck = [
             "lead_name", "lead_stage_id", "lead_source_id", "branch_id",
             "lead_type_id", "customer_type_id", "product_id",
@@ -244,11 +214,9 @@ exports.patch = async (req, res) => {
             "contact_number", "email", "dates",
         ];
 
-        // --- 1. Build the 'up' object and generate summary descriptions ---
         fieldsToCheck.forEach(k => {
             if (typeof req.body[k] !== "undefined") {
 
-                // Validation and assignment to 'up'
                 if (k === 'contact_number' && (!Array.isArray(req.body[k]) || req.body[k].length === 0)) {
                     return res.status(400).json({ status: "false", message: "contact_number must be a non-empty array" });
                 }
@@ -264,7 +232,6 @@ exports.patch = async (req, res) => {
 
                 up[k] = req.body[k];
 
-                // Check for value change
                 const oldValue = lead.get(k);
                 const newValue = req.body[k];
 
@@ -283,33 +250,27 @@ exports.patch = async (req, res) => {
                         description = `Updated **${fieldName}** from *${oldLogValue}* to *${newLogValue}*`;
                     }
 
-                    changeDescriptions.push({ key: k, text: description }); // Store key and text
+                    changeDescriptions.push({ key: k, text: description });
                 }
             }
         });
 
         up.updated_by = userId;
 
-        // --- 2. Perform the update ---
         await lead.update(up);
 
-        // Log consolidated activity as a JSON array string
         if (changeDescriptions.length > 0) {
 
             let logFieldName;
 
             if (changeDescriptions.length === 1) {
-                // Case 1: Only one field was updated (e.g., 'lead_stage_id')
                 const singleKey = changeDescriptions[0].key;
                 const fieldName = singleKey.replace(/_/g, ' ');
-                // Format: Lead Stage ID Updated (e.g., capitalizing the whole field name)
                 logFieldName = fieldName.charAt(0).toUpperCase() + fieldName.slice(1) + ' Updated';
             } else {
-                // Case 2: Multiple fields were updated
                 logFieldName = 'Multiple Fields Updated';
             }
 
-            // Extract only the text messages for the summary JSON array
             const summaryTexts = changeDescriptions.map(d => d.text);
             const summaryData = JSON.stringify(summaryTexts);
 
@@ -317,45 +278,75 @@ exports.patch = async (req, res) => {
                 lead_id: lead.id,
                 user_id: userId,
                 branch_id: lead.branch_id,
-                field_name: logFieldName, // ⬅️ DYNAMIC FIELD NAME
+                field_name: logFieldName,
                 old_value: null, new_value: null,
                 summary: summaryData,
             });
         }
 
-        res.json({ status: "true", data: lead });
+        const finalLead = lead.toJSON();
+        delete finalLead.isDelete;
+
+        res.json({ status: "true", data: finalLead });
     } catch (e) {
         res.status(400).json({ status: "false", message: e.message });
     }
 };
 
-// DELETE /leads/:id
 exports.remove = async (req, res) => {
     try {
         const userId = req.user?.id || null;
         const lead = await Lead.findByPk(req.params.id);
-        if (!lead) return res.status(404).json({ status: "false", message: "Lead not found" });
+
+        if (!lead) {
+            return res.status(404).json({ status: "false", message: "Lead not found" });
+        }
+
+        if (lead.isDelete) {
+            return res.status(400).json({ status: "false", message: "Lead already deleted" });
+        }
 
         const leadId = lead.id;
         const leadName = lead.lead_name;
-        const branchId = lead.branch_id; // Stored before destruction
+        const branchId = lead.branch_id;
 
-        await lead.destroy();
+        try {
+            // Attempt soft delete
+            await lead.update({ isDelete: true });
 
-        // Log the deletion event as a JSON array containing one string
-        const deletionSummary = [`Lead **${leadName}** deleted`];
+            const deletionSummary = [`Lead **${leadName}** deleted`];
 
-        await LeadActivityLog.create({
-            lead_id: leadId,
-            user_id: userId,
-            branch_id: branchId, // ADDED: branch_id
-            field_name: 'Deletion',
-            old_value: null, new_value: null,
-            summary: JSON.stringify(deletionSummary),
-        });
+            await LeadActivityLog.create({
+                lead_id: leadId,
+                user_id: userId,
+                branch_id: branchId,
+                field_name: 'Deletion',
+                old_value: null,
+                new_value: null,
+                summary: JSON.stringify(deletionSummary),
+            });
 
-        res.json({ status: "true", message: "Deleted" });
+            return res.json({ status: "true", message: "Lead deleted" });
+
+        } catch (dbError) {
+            if (
+                dbError.name === 'SequelizeForeignKeyConstraintError' ||
+                (dbError.original && (dbError.original.code === 'ER_ROW_IS_REFERENCED' || dbError.original.errno === 1451))
+            ) {
+                const message = "Cannot delete this Lead because it is currently linked to other records. Please update or delete those records first.";
+
+                return res.status(409).json({
+                    status: "false",
+                    message: message,
+                    error_type: "ForeignKeyConstraintError"
+                });
+            }
+
+            throw dbError;
+        }
+
     } catch (e) {
+        console.error("Lead remove error:", e.message);
         res.status(400).json({ status: "false", message: e.message });
     }
 };

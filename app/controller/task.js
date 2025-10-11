@@ -1,4 +1,3 @@
-// app/controller/task.controller.js
 const Task = require("../models/task.js");
 const User = require("../models/user.js");
 const TaskStage = require("../models/TaskStage.js");
@@ -7,12 +6,12 @@ const Reminder = require("../models/reminder.js");
 const Call = require("../models/call.js");
 const LeadActivityLog = require("../models/LeadActivityLog.js");
 
+const jsonSummary = (messages) => JSON.stringify(Array.isArray(messages) ? messages : [messages]);
+
 const getLogValue = (val) => {
     if (val === null || val === undefined) return null;
     return typeof val === 'object' ? JSON.stringify(val) : String(val);
 };
-
-const jsonSummary = (messages) => JSON.stringify(Array.isArray(messages) ? messages : [messages]);
 
 function mapTaskPayload(taskInstance) {
     const obj = taskInstance.toJSON();
@@ -112,7 +111,6 @@ exports.list = async (req, res) => {
     }
 };
 
-
 exports.getById = async (req, res) => {
     try {
         const item = await Task.findByPk(req.params.id, {
@@ -155,7 +153,6 @@ exports.getById = async (req, res) => {
     }
 };
 
-
 exports.listByBranch = async (req, res) => {
     try {
         const { id } = req.params;
@@ -183,7 +180,6 @@ exports.listByBranch = async (req, res) => {
         res.status(400).json({ status: "false", message: e.message });
     }
 };
-
 
 exports.listByUser = async (req, res) => {
     try {
@@ -213,7 +209,6 @@ exports.listByUser = async (req, res) => {
     }
 };
 
-
 exports.listByLead = async (req, res) => {
     try {
         const { id } = req.params;
@@ -242,269 +237,232 @@ exports.listByLead = async (req, res) => {
     }
 };
 
-
 exports.create = async (req, res) => {
-    try {
-        const userId = req.user?.id || null;
+    try {
+        const userId = req.user?.id || null;
 
-        const {
-            task_name, task_stage_id, branch_id, priority, start_date, due_date,
-            follow_up_date, assigned_user, lead_id, reminder, call_id, // 🔑 ADD call_id
-        } = req.body;
+        const {
+            task_name, task_stage_id, branch_id, priority, start_date, due_date,
+            follow_up_date, assigned_user, lead_id, reminder, call_id
+        } = req.body;
 
-        if (!task_name || !branch_id || !priority) {
-            return res.status(400).json({ status: "false", message: "task_name, branch_id, and priority are required" });
-        }
-        
-        if (reminder && (!reminder.reminder_date || !reminder.reminder_time || !reminder.reminder_unit || !reminder.reminder_value)) {
-             return res.status(400).json({ status: "false", message: "reminder must contain date, time, unit, and value" });
-        }
+        if (!task_name || !branch_id || !priority) {
+            return res.status(400).json({ status: "false", message: "task_name, branch_id, and priority are required" });
+        }
 
-        // Create the task first
-        const task = await Task.create({
-            task_name, task_stage_id: typeof task_stage_id === "number" ? task_stage_id : undefined, branch_id, priority, start_date, due_date,
-            follow_up_date, assigned_user, lead_id, call_id, // 🔑 ADD call_id
-            created_by: userId, updated_by: userId,
-        });
+        if (reminder && (!reminder.reminder_date || !reminder.reminder_time || !reminder.reminder_unit || !reminder.reminder_value)) {
+            return res.status(400).json({ status: "false", message: "reminder must contain date, time, unit, and value" });
+        }
 
-        let reminderRecord = null;
-        // If a reminder object is provided, create a reminder record
-        if (reminder) {
-            reminderRecord = await Reminder.create({
-                reminder_name: `Reminder for Task: ${task_name}`,
-                reminder_date: reminder.reminder_date,
-                reminder_time: reminder.reminder_time,
-                reminder_unit: reminder.reminder_unit,
-                reminder_value: reminder.reminder_value,
-                branch_id: branch_id, lead_id: lead_id, task_id: task.id, assigned_user: assigned_user,
-                created_by: userId, updated_by: userId,
-            });
-            
-            // Update the task with the reminder_id
-            await task.update({ reminder_id: reminderRecord.id });
-        }
-        
-        // 🔑 LOGGING 9: Log Task Creation if lead_id exists
-        if (lead_id) {
-             const reminderMsg = reminderRecord ? ` with reminder set for ${reminderRecord.reminder_date}.` : '.';
-             const message = [`Task **${task.task_name}** created${reminderMsg}`];
-             await LeadActivityLog.create({
-                 lead_id: lead_id,
-                 user_id: userId,
-                 branch_id: branch_id,
-                 field_name: 'Task Created',
-                 summary: jsonSummary(message),
-             });
-        }
+        const task = await Task.create({
+            task_name, task_stage_id: typeof task_stage_id === "number" ? task_stage_id : undefined, branch_id, priority, start_date, due_date,
+            follow_up_date, assigned_user, lead_id, call_id,
+            created_by: userId, updated_by: userId,
+        });
 
+        let reminderRecord = null;
 
-        // Re-fetch the task to get the updated data, including the new reminder_id
-        const result = await Task.findByPk(task.id, {
-             include: [{ model: Reminder, as: "reminders", attributes: ["id"] }] // Fetch minimal reminder data for mapping
-        }); 
-        
-        const finalPayload = mapTaskPayload(result);
+        if (reminder) {
+            reminderRecord = await Reminder.create({
+                reminder_name: `Reminder for Task: ${task_name}`,
+                reminder_date: reminder.reminder_date,
+                reminder_time: reminder.reminder_time,
+                reminder_unit: reminder.reminder_unit,
+                reminder_value: reminder.reminder_value,
+                branch_id: branch_id, lead_id: lead_id, task_id: task.id, assigned_user: assigned_user,
+                created_by: userId, updated_by: userId,
+            });
 
-        res.status(201).json({ status: "true", data: finalPayload });
+            await task.update({ reminder_id: reminderRecord.id });
+        }
 
-    } catch (e) {
-        res.status(400).json({ status: "false", message: e.message });
-    }
+        if (lead_id) {
+            const reminderMsg = reminderRecord ? ` with reminder set for ${reminderRecord.reminder_date}.` : '.';
+            const message = [`Task **${task.task_name}** created${reminderMsg}`];
+            await LeadActivityLog.create({
+                lead_id: lead_id,
+                user_id: userId,
+                branch_id: branch_id,
+                field_name: 'Task Created',
+                summary: jsonSummary(message),
+            });
+        }
+
+        const result = await Task.findByPk(task.id, {
+            include: [{ model: Reminder, as: "reminders", attributes: ["id"] }]
+        });
+
+        const finalPayload = mapTaskPayload(result);
+
+        res.status(201).json({ status: "true", data: finalPayload });
+
+    } catch (e) {
+        res.status(400).json({ status: "false", message: e.message });
+    }
 };
-
 
 exports.patch = async (req, res) => {
-    try {
-        const userId = req.user?.id || null;
-        // Fetch the task, including its old reminder ID state
-        const task = await Task.findByPk(req.params.id); 
-        if (!task) return res.status(404).json({ status: "false", message: "Task not found" });
+    try {
+        const userId = req.user?.id || null;
+        const task = await Task.findByPk(req.params.id);
+        if (!task) return res.status(404).json({ status: "false", message: "Task not found" });
 
-        const up = {};
-        const changeDescriptions = []; // Array to store { key, text } of all changes
-        const oldStageId = task.task_stage_id; 
-        const oldReminderId = task.reminder_id; // Capture current reminder link
+        const up = {};
+        const changeDescriptions = [];
+        const oldStageId = task.task_stage_id;
+        const oldReminderId = task.reminder_id;
 
-        // 🔑 Comprehensive list of fields to check for changes
-        const fieldsToTrack = [
-            "task_name", "task_stage_id", "branch_id", "priority", "start_date",
-            "due_date", "follow_up_date", "assigned_user", "lead_id", "call_id", // 🔑 ADD call_id
-        ];
+        const fieldsToTrack = [
+            "task_name", "task_stage_id", "branch_id", "priority", "start_date",
+            "due_date", "follow_up_date", "assigned_user", "lead_id", "call_id"
+        ];
 
-        // --- 1. Process Task Fields (Name, Dates, FKs) ---
-        fieldsToTrack.forEach((k) => {
-            if (typeof req.body[k] !== "undefined") {
-                
-                up[k] = req.body[k];
-                
-                const oldValue = task.get(k);
-                const newValue = req.body[k];
+        fieldsToTrack.forEach((k) => {
+            if (typeof req.body[k] !== "undefined") {
+                up[k] = req.body[k];
 
-                const oldLogValue = getLogValue(oldValue);
-                const newLogValue = getLogValue(newValue);
+                const oldValue = task.get(k);
+                const newValue = req.body[k];
 
-                if (oldLogValue !== newLogValue) {
-                    let description = '';
-                    const fieldName = k.replace(/_/g, ' ');
+                const oldLogValue = getLogValue(oldValue);
+                const newLogValue = getLogValue(newValue);
 
-                    if (oldLogValue === null || oldLogValue === 'null') {
-                        description = `Added **${fieldName}** as *${newLogValue}*`;
-                    } else if (newLogValue === null || newLogValue === 'null') {
-                        description = `Removed **${fieldName}** (was *${oldLogValue}*)`;
-                    } else {
-                        description = `Updated **${fieldName}** from *${oldLogValue}* to *${newLogValue}*`;
-                    }
-                    changeDescriptions.push({ key: k, text: description, isStage: (k === 'task_stage_id') });
-                }
-            }
-        });
+                if (oldLogValue !== newLogValue) {
+                    let description = '';
+                    const fieldName = k.replace(/_/g, ' ');
 
+                    if (oldLogValue === null || oldLogValue === 'null') {
+                        description = `Added **${fieldName}** as *${newLogValue}*`;
+                    } else if (newLogValue === null || newLogValue === 'null') {
+                        description = `Removed **${fieldName}** (was *${oldLogValue}*)`;
+                    } else {
+                        description = `Updated **${fieldName}** from *${oldLogValue}* to *${newLogValue}*`;
+                    }
+                    changeDescriptions.push({ key: k, text: description, isStage: (k === 'task_stage_id') });
+                }
+            }
+        });
 
-        // --- 2. Process Reminder Logic (Creation/Update/Deletion of linked Reminder) ---
-        if (typeof req.body.reminder !== "undefined") {
-            const reminderInput = req.body.reminder;
-            
-            if (reminderInput !== null && (typeof reminderInput !== 'object' || Array.isArray(reminderInput))) {
-                return res.status(400).json({ status: "false", message: "reminder must be a valid object or null" });
-            }
-            
-            // 🔑 LOGIC FOR REMINDER FIELDS
-            const reminderFieldsToTrack = ["reminder_name", "reminder_date", "reminder_time", "reminder_unit", "reminder_value"];
-            const reminderUpdates = { updated_by: userId };
-            const subChangeDescriptions = []; // Collect granular reminder changes here
+        if (typeof req.body.reminder !== "undefined") {
+            const reminderInput = req.body.reminder;
 
-            // --- 2a. Determine if Reminder is being updated, created, or removed ---
-            let reminderRecord = null;
-            if (task.reminder_id) {
-                 reminderRecord = await Reminder.findByPk(task.reminder_id);
-            }
+            if (reminderInput !== null && (typeof reminderInput !== 'object' || Array.isArray(reminderInput))) {
+                return res.status(400).json({ status: "false", message: "reminder must be a valid object or null" });
+            }
 
-            if (reminderInput !== null) {
-                // UPDATE or CREATE Path
-                
-                let isReminderChanged = false;
-                
-                // Track changes within the reminder payload
-                reminderFieldsToTrack.forEach(k => {
-                    if (reminderInput[k] !== undefined) {
-                        const oldValue = reminderRecord ? reminderRecord.get(k) : null;
-                        const newValue = reminderInput[k];
+            const reminderFieldsToTrack = ["reminder_name", "reminder_date", "reminder_time", "reminder_unit", "reminder_value"];
+            const reminderUpdates = { updated_by: userId };
+            const subChangeDescriptions = [];
 
-                        const oldLogValue = getLogValue(oldValue);
-                        const newLogValue = getLogValue(newValue);
+            let reminderRecord = null;
+            if (task.reminder_id) {
+                reminderRecord = await Reminder.findByPk(task.reminder_id);
+            }
 
-                        if (oldLogValue !== newLogValue) {
-                            // Collect specific changes into subChangeDescriptions
-                            subChangeDescriptions.push({
-                                key: `reminder_${k}`, 
-                                text: `Updated **reminder ${k.replace('_', ' ')}** from *${oldLogValue || 'NULL'}* to *${newLogValue}*`
-                            });
-                            reminderUpdates[k] = newValue;
-                            isReminderChanged = true;
-                        }
-                    }
-                });
+            if (reminderInput !== null) {
+                let isReminderChanged = false;
 
-                if (reminderRecord && isReminderChanged) {
-                    // Case 2.1: UPDATE existing reminder
-                    await reminderRecord.update(reminderUpdates);
-                    // 🔑 FIX: Append granular changes instead of generic message
-                    changeDescriptions.push(...subChangeDescriptions); 
-                } else if (!reminderRecord && Object.keys(reminderUpdates).length > 1) { 
-                    // Case 2.2: CREATE new reminder (only if actual fields are provided)
+                reminderFieldsToTrack.forEach(k => {
+                    if (reminderInput[k] !== undefined) {
+                        const oldValue = reminderRecord ? reminderRecord.get(k) : null;
+                        const newValue = reminderInput[k];
 
-                    // Basic creation confirmation message
-                    changeDescriptions.push({ key: 'reminder', text: `Created new **task reminder**.` });
+                        const oldLogValue = getLogValue(oldValue);
+                        const newLogValue = getLogValue(newValue);
 
-                    // Add details of the newly created reminder's key fields for logging
-                    reminderFieldsToTrack.forEach(k => {
-                        if (reminderInput[k] !== undefined) {
-                            changeDescriptions.push({ 
-                                key: `reminder_${k}`, 
-                                text: `Set **reminder ${k.replace('_', ' ')}** to *${getLogValue(reminderInput[k])}*` 
-                            });
-                        }
-                    });
+                        if (oldLogValue !== newLogValue) {
+                            subChangeDescriptions.push({
+                                key: `reminder_${k}`,
+                                text: `Updated **reminder ${k.replace('_', ' ')}** from *${oldLogValue || 'NULL'}* to *${newLogValue}*`
+                            });
+                            reminderUpdates[k] = newValue;
+                            isReminderChanged = true;
+                        }
+                    }
+                });
 
-                    // Perform the creation
-                    reminderUpdates.branch_id = task.branch_id;
-                    reminderUpdates.lead_id = task.lead_id;
-                    reminderUpdates.task_id = task.id;
-                    reminderUpdates.assigned_user = task.assigned_user;
-                    reminderUpdates.created_by = userId;
-                    
-                    reminderRecord = await Reminder.create(reminderUpdates);
-                    up.reminder_id = reminderRecord.id; 
-                }
-                 // IMPORTANT: If reminderRecord exists and !isReminderChanged, we skip pushing to changeDescriptions, preventing redundant logs.
+                if (reminderRecord && isReminderChanged) {
+                    await reminderRecord.update(reminderUpdates);
+                    changeDescriptions.push(...subChangeDescriptions);
+                } else if (!reminderRecord && Object.keys(reminderUpdates).length > 1) {
+                    changeDescriptions.push({ key: 'reminder', text: `Created new **task reminder**.` });
 
-            } else if (task.reminder_id) { 
-                // Case 2.3: REMOVE existing reminder (reminderInput is null)
-                await Reminder.destroy({ where: { task_id: task.id } });
-                up.reminder_id = null; // Unlink the reminder
-                changeDescriptions.push({ key: 'reminder', text: 'Removed **task reminder**.' });
-            }
-        }
+                    reminderFieldsToTrack.forEach(k => {
+                        if (reminderInput[k] !== undefined) {
+                            changeDescriptions.push({
+                                key: `reminder_${k}`,
+                                text: `Set **reminder ${k.replace('_', ' ')}** to *${getLogValue(reminderInput[k])}*`
+                            });
+                        }
+                    });
 
+                    reminderUpdates.branch_id = task.branch_id;
+                    reminderUpdates.lead_id = task.lead_id;
+                    reminderUpdates.task_id = task.id;
+                    reminderUpdates.assigned_user = task.assigned_user;
+                    reminderUpdates.created_by = userId;
 
-        // --- 3. Final Task Update & Logging ---
-        up.updated_by = userId;
-        
-        // 🔑 FIX: Handle no changes found, even if reminder block was processed but found no diffs
-        if (Object.keys(up).length > 1 || (Object.keys(up).length === 1 && up.updated_by !== userId && changeDescriptions.length > 0)) {
-             await task.update(up);
-        } else if (changeDescriptions.length === 0) {
-            // No substantive changes to task fields or reminder, prevent redundant log
-            return res.json({ status: "true", data: task });
-        }
+                    reminderRecord = await Reminder.create(reminderUpdates);
+                    up.reminder_id = reminderRecord.id;
+                }
 
+            } else if (task.reminder_id) {
+                await Reminder.destroy({ where: { task_id: task.id } });
+                up.reminder_id = null;
+                changeDescriptions.push({ key: 'reminder', text: 'Removed **task reminder**.' });
+            }
+        }
 
-        if (task.lead_id && changeDescriptions.length > 0) {
-            let logFieldName;
-            
-            const stageChangeDetected = up.task_stage_id && up.task_stage_id !== oldStageId;
+        up.updated_by = userId;
 
-            if (stageChangeDetected && changeDescriptions.length === 1) {
-                logFieldName = 'Task Stage Updated';
-            } else if (changeDescriptions.length === 1) {
-                const singleKey = changeDescriptions[0].key;
-                const fieldName = singleKey.replace(/_/g, ' ');
-                logFieldName = fieldName.charAt(0).toUpperCase() + fieldName.slice(1) + ' Updated';
-            } else {
-                logFieldName = 'Task Details Updated';
-            }
-            
-            // Prepare summary data (array of text changes)
-            const summaryTexts = changeDescriptions.map(d => d.text);
-            const summaryData = jsonSummary(summaryTexts);
-            
-            // 🔑 LOGGING
-            await LeadActivityLog.create({
-                lead_id: task.lead_id,
-                user_id: userId,
-                branch_id: task.branch_id,
-                field_name: logFieldName,
-                summary: summaryData,
-            });
-        }
+        if (Object.keys(up).length > 1 || (Object.keys(up).length === 1 && up.updated_by !== userId && changeDescriptions.length > 0)) {
+            await task.update(up);
+        } else if (changeDescriptions.length === 0) {
+            return res.json({ status: "true", data: task });
+        }
 
-        // Re-fetch the task to include the updated reminder data
-        const updatedTask = await Task.findByPk(task.id, {
-            include: [
-                { model: User, as: "assignee", attributes: ["id", "user_name", "email"] },
-                { model: TaskStage, as: "stage", attributes: ["id", "name"] },
-                { model: Lead, as: "lead", attributes: ["id", "lead_name"] },
-                { model: Reminder, as: "reminders", attributes: ["id", "reminder_name", "reminder_date", "reminder_time", "reminder_unit", "reminder_value"] },
-            ]
-        });
+        if (task.lead_id && changeDescriptions.length > 0) {
+            let logFieldName;
 
-        const mapped = mapTaskPayload(updatedTask);
-        res.json({ status: "true", data: mapped });
-    } catch (e) {
-        res.status(400).json({ status: "false", message: e.message });
-    }
+            const stageChangeDetected = up.task_stage_id && up.task_stage_id !== oldStageId;
+
+            if (stageChangeDetected && changeDescriptions.length === 1) {
+                logFieldName = 'Task Stage Updated';
+            } else if (changeDescriptions.length === 1) {
+                const singleKey = changeDescriptions[0].key;
+                const fieldName = singleKey.replace(/_/g, ' ');
+                logFieldName = fieldName.charAt(0).toUpperCase() + fieldName.slice(1) + ' Updated';
+            } else {
+                logFieldName = 'Task Details Updated';
+            }
+
+            const summaryTexts = changeDescriptions.map(d => d.text);
+            const summaryData = jsonSummary(summaryTexts);
+
+            await LeadActivityLog.create({
+                lead_id: task.lead_id,
+                user_id: userId,
+                branch_id: task.branch_id,
+                field_name: logFieldName,
+                summary: summaryData,
+            });
+        }
+
+        const updatedTask = await Task.findByPk(task.id, {
+            include: [
+                { model: User, as: "assignee", attributes: ["id", "user_name", "email"] },
+                { model: TaskStage, as: "stage", attributes: ["id", "name"] },
+                { model: Lead, as: "lead", attributes: ["id", "lead_name"] },
+                { model: Reminder, as: "reminders", attributes: ["id", "reminder_name", "reminder_date", "reminder_time", "reminder_unit", "reminder_value"] },
+            ]
+        });
+
+        const mapped = mapTaskPayload(updatedTask);
+        res.json({ status: "true", data: mapped });
+    } catch (e) {
+        res.status(400).json({ status: "false", message: e.message });
+    }
 };
-
 
 exports.remove = async (req, res) => {
     try {
@@ -512,7 +470,6 @@ exports.remove = async (req, res) => {
         const task = await Task.findByPk(req.params.id);
         if (!task) return res.status(404).json({ status: "false", message: "Task not found" });
 
-        // 🔑 LOGGING 11: Log Task Deletion if lead_id exists
         if (task.lead_id) {
             const message = [`Task **${task.task_name}** was permanently deleted.`];
             await LeadActivityLog.create({
@@ -524,7 +481,6 @@ exports.remove = async (req, res) => {
             });
         }
 
-        // Also delete associated reminders
         await Reminder.destroy({ where: { task_id: task.id } });
 
         await task.destroy();

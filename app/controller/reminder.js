@@ -1,4 +1,3 @@
-// app/controller/reminder.controller.js
 const Reminder = require("../models/reminder.js");
 const User = require("../models/user.js");
 const Lead = require("../models/lead.js");
@@ -6,14 +5,14 @@ const Task = require("../models/task.js");
 const Call = require("../models/call.js");
 const LeadActivityLog = require("../models/LeadActivityLog.js");
 
+const jsonSummary = (messages) => JSON.stringify(Array.isArray(messages) ? messages : [messages]);
+
 const getLogValue = (val) => {
     if (val === null || val === undefined) return null;
     return typeof val === 'object' ? JSON.stringify(val) : String(val);
 };
 
-const jsonSummary = (messages) => JSON.stringify(Array.isArray(messages) ? messages : [messages]);
-
-function mapReminderPayload(reminderInstance) { /* ... (remains unchanged) ... */
+function mapReminderPayload(reminderInstance) { 
     const obj = reminderInstance.toJSON();
 
     if (obj.call) {
@@ -53,7 +52,6 @@ function mapReminderPayload(reminderInstance) { /* ... (remains unchanged) ... *
     return obj;
 }
 
-
 exports.list = async (req, res) => {
     try {
         const items = await Reminder.findAll({
@@ -75,7 +73,6 @@ exports.list = async (req, res) => {
         res.status(400).json({ status: "false", message: e.message });
     }
 };
-
 
 exports.getById = async (req, res) => {
     try {
@@ -127,7 +124,6 @@ exports.listByBranch = async (req, res) => {
     }
 };
 
-
 exports.create = async (req, res) => {
     try {
         const userId = req.user?.id || null;
@@ -150,7 +146,6 @@ exports.create = async (req, res) => {
             created_by: userId, updated_by: userId,
         });
 
-        // 🔑 LOGGING 6: Log Reminder Creation if associated with a Lead
         if (lead_id) {
             const message = [`Reminder **${reminder.reminder_name}** set for *${reminder_date} ${reminder_time}*.`];
             await LeadActivityLog.create({
@@ -168,35 +163,28 @@ exports.create = async (req, res) => {
     }
 };
 
-
 exports.patch = async (req, res) => {
     try {
         const userId = req.user?.id || null;
-        // Fetch the existing reminder record
         const reminder = await Reminder.findByPk(req.params.id);
         if (!reminder) return res.status(404).json({ status: "false", message: "Reminder not found" });
 
         const up = {};
-        const changeDescriptions = []; // Array to store { key, text } of all changes
+        const changeDescriptions = []; 
 
-        // 🔑 All fields that can be updated in the Reminder model
         const fieldsToCheck = [
             "reminder_name", "reminder_date", "reminder_time", "reminder_unit", "reminder_value",
             "branch_id", "lead_id", "task_id", "assigned_user","call_id"
         ];
 
-        // --- 1. Build the 'up' object and generate summary descriptions ---
         fieldsToCheck.forEach(k => {
             if (typeof req.body[k] !== "undefined") {
 
-                // Set the value for update
                 up[k] = req.body[k];
 
-                // Check for value change
                 const oldValue = reminder.get(k);
                 const newValue = req.body[k];
 
-                // Note: getLogValue and jsonSummary are assumed to be defined in this file's scope
                 const oldLogValue = getLogValue(oldValue);
                 const newLogValue = getLogValue(newValue);
 
@@ -220,25 +208,19 @@ exports.patch = async (req, res) => {
 
         up.updated_by = userId;
 
-        // --- 2. Perform the update ---
-        // Only update if there are actual changes detected, otherwise skip DB call
         if (Object.keys(up).length > 1 || (Object.keys(up).length === 1 && up.updated_by !== userId)) {
             await reminder.update(up);
         }
 
-        // --- 3. Log consolidated activity ---
         if (changeDescriptions.length > 0) {
 
             let logFieldName;
 
             if (changeDescriptions.length === 1) {
-                // Case 1: Dynamic naming based on the single field changed
                 const singleKey = changeDescriptions[0].key;
                 const fieldName = singleKey.replace(/_/g, ' ');
-                // Format: Reminder Name Updated
                 logFieldName = fieldName.charAt(0).toUpperCase() + fieldName.slice(1) + ' Updated';
             } else {
-                // Case 2: Multiple fields were updated
                 logFieldName = 'Reminder Details Updated';
             }
 
@@ -246,7 +228,6 @@ exports.patch = async (req, res) => {
             const summaryTexts = changeDescriptions.map(d => d.text);
             const summaryData = jsonSummary(summaryTexts);
 
-            // 🔑 LOGGING: Create the single, structured log entry
             if (reminder.lead_id) {
                 await LeadActivityLog.create({
                     lead_id: reminder.lead_id,
@@ -264,14 +245,12 @@ exports.patch = async (req, res) => {
     }
 };
 
-
 exports.remove = async (req, res) => {
     try {
         const userId = req.user?.id || null;
         const reminder = await Reminder.findByPk(req.params.id);
         if (!reminder) return res.status(404).json({ status: "false", message: "Reminder not found" });
 
-        // 🔑 LOGGING 8: Log Reminder Deletion if lead_id exists
         if (reminder.lead_id) {
             const message = [`Reminder **${reminder.reminder_name}** was deleted.`];
             await LeadActivityLog.create({

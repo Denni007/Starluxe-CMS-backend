@@ -1,16 +1,5 @@
-// app/controller/role.controller.js
-// CommonJS + unified responses { status: "true"/"false", ... }
-
-// const Role = require("../models/role.js");
-// const Branch = require("../models/branch.js");
-// const User = require("../models/user.js");
-// const UserBranchRole = require("../models/UserBranchRole.js");
-// const RolePermission = require("../models/RolePermission.js");
-// const Permission = require("../models/permission.js");
 const { Op } = require("sequelize");
 const { sequelize, Role, Permission, RolePermission, Branch, User, UserBranchRole } = require("../models");
-
-
 
 exports.list = async (req, res) => {
   try {
@@ -35,7 +24,6 @@ exports.get = async (req, res) => {
     res.status(400).json({ status: "false", message: e.message });
   }
 };
-
 
 exports.listByBranch = async (req, res) => {
   try {
@@ -272,6 +260,7 @@ exports.update = async (req, res) => {
     res.status(400).json({ status: "false", message: e.message });
   }
 };
+
 exports.updateRole = async (req, res) => {
   try {
     // handle case where frontend sends JSON string in `data`

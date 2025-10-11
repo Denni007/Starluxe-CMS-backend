@@ -34,7 +34,7 @@ const callIncludes = [
     { model: CallResponseStage, as: "callResponseStage", attributes: ["id", "name", "description"] }
 ];
 
-function mapCallPayload(callInstance) { /* ... (remains unchanged) ... */
+function mapCallPayload(callInstance) {
     const obj = callInstance.toJSON();
 
     if (obj.assignee) {
@@ -64,9 +64,6 @@ function mapCallPayload(callInstance) { /* ... (remains unchanged) ... */
 
     return obj;
 }
-
-
-// --- NEW DEDICATED CREATE APIS ---
 
 exports.create = async (req, res) => {
     try {
@@ -415,6 +412,137 @@ exports.patch = async (req, res) => {
     }
 };
 
+exports.remove = async (req, res) => {
+    try {
+        const call = await Call.findByPk(req.params.id);
+        if (!call) return res.status(404).json({ status: "false", message: "Call not found" });
+
+        // 🔑 LOGGING 7: Log Call Deletion
+        if (call.lead_id) {
+            const message = [`Call **${call.subject}** was permanently deleted.`];
+            await LeadActivityLog.create({
+                lead_id: call.lead_id,
+                user_id: req.user?.id || null,
+                branch_id: call.branch_id,
+                field_name: 'Call Deleted',
+                summary: jsonSummary(message),
+            });
+        }
+
+        // Also delete the associated reminder if it exists
+        if (call.reminder_id) {
+            await Reminder.destroy({ where: { id: call.reminder_id } });
+        }
+
+        await call.destroy();
+        res.json({ status: "true", message: "Deleted" });
+    } catch (e) {
+        console.error("Call remove error:", e);
+        res.status(400).json({ status: "false", message: e.message });
+    }
+};
+
+exports.list = async (req, res) => {
+    try {
+        const branchId = Number(req.query.branch_id);
+        const where = branchId ? { branch_id: branchId } : {};
+
+        const items = await Call.findAll({
+            where, // Apply branch filter if present
+            order: [["id", "DESC"]],
+            include: callIncludes,
+        });
+
+        if (!items) return res.status(404).json({ status: "false", message: "Not qqqfound" });
+
+        const mapped = (items || []).map(mapCallPayload);
+        res.json({ status: "true", data: mapped });
+    } catch (e) {
+        console.error("Call list error:", e);
+        res.status(400).json({ status: "false", message: e.message });
+    }
+};
+
+exports.getById = async (req, res) => {
+    try {
+        const item = await Call.findByPk(req.params.id, { include: callIncludes });
+
+        if (!item) return res.status(404).json({ status: "false", message: "Nowwwwt found" });
+
+        const mapped = mapCallPayload(item);
+        res.json({ status: "true", data: mapped });
+    } catch (e) {
+        console.error("Call getById error:", e);
+        res.status(400).json({ status: "false", message: e.message });
+    }
+};
+
+const filterCallsByBranchAndType = async (res, branchId, callType) => {
+    try {
+        const where = { call_type: callType };
+        if (branchId) {
+            where.branch_id = branchId;
+        }
+
+        const items = await Call.findAll({
+            where,
+            order: [["id", "DESC"]],
+            include: callIncludes,
+        });
+
+        const mapped = (items || []).map(mapCallPayload);
+        return res.json({ status: "true", data: mapped });
+    } catch (e) {
+        console.error(`Call list by type (${callType}) error:`, e);
+        return res.status(400).json({ status: "false", message: e.message });
+    }
+};
+
+exports.listByBranch = async (req, res) => {
+    const branchId = Number(req.params.id);
+    if (!branchId) {
+        return res.status(400).json({ status: "false", message: "Branch ID is required." });
+    }
+    return exports.list({ query: { branch_id: branchId } }, res); // Re-use general list logic
+};
+
+exports.listByCallLog = async (req, res) => {
+    const branchId = Number(req.params.id);
+    return filterCallsByBranchAndType(res, branchId, 'Log');
+};
+
+exports.listByScheduleCall = async (req, res) => {
+    const branchId = Number(req.params.id);
+    return filterCallsByBranchAndType(res, branchId, 'Schedule');
+};
+
+exports.listByRescheduleCall = async (req, res) => {
+    const branchId = Number(req.params.id);
+    return filterCallsByBranchAndType(res, branchId, 'Reschedule');
+};
+
+exports.listByCancelledCall = async (req, res) => {
+    const branchId = Number(req.params.id);
+    return filterCallsByBranchAndType(res, branchId, 'Cancelled');
+};
+
+exports.listByUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const items = await Call.findAll({
+            where: { assigned_user: id },
+            order: [["id", "DESC"]],
+            include: callIncludes,
+        });
+
+        const mapped = (items || []).map(mapCallPayload);
+        res.json({ status: "true", data: mapped });
+    } catch (e) {
+        console.error("Call listByUser error:", e);
+        res.status(400).json({ status: "false", message: e.message });
+    }
+};
+
 
 exports.createLogCall = async (req, res) => {
     try {
@@ -523,8 +651,6 @@ exports.createScheduleCall = async (req, res) => {
         res.status(400).json({ status: "false", message: e.message });
     }
 };
-
-// --- DEDICATED UPDATE APIS ---
 
 exports.patchLogCall = async (req, res) => {
     try {
@@ -876,202 +1002,6 @@ exports.patchCancelCall = async (req, res) => {
         res.json({ status: "true", data: mapCallPayload(result) });
     } catch (e) {
         console.error("Call patchCancelCall error:", e);
-        res.status(400).json({ status: "false", message: e.message });
-    }
-};
-
-
-
-exports.remove = async (req, res) => {
-    try {
-        const call = await Call.findByPk(req.params.id);
-        if (!call) return res.status(404).json({ status: "false", message: "Call not found" });
-
-        // 🔑 LOGGING 7: Log Call Deletion
-        if (call.lead_id) {
-            const message = [`Call **${call.subject}** was permanently deleted.`];
-            await LeadActivityLog.create({
-                lead_id: call.lead_id,
-                user_id: req.user?.id || null,
-                branch_id: call.branch_id,
-                field_name: 'Call Deleted',
-                summary: jsonSummary(message),
-            });
-        }
-
-        // Also delete the associated reminder if it exists
-        if (call.reminder_id) {
-            await Reminder.destroy({ where: { id: call.reminder_id } });
-        }
-
-        await call.destroy();
-        res.json({ status: "true", message: "Deleted" });
-    } catch (e) {
-        console.error("Call remove error:", e);
-        res.status(400).json({ status: "false", message: e.message });
-    }
-};
-
-
-exports.list = async (req, res) => {
-    try {
-        const branchId = Number(req.query.branch_id);
-        const where = branchId ? { branch_id: branchId } : {};
-
-        const items = await Call.findAll({
-            where, // Apply branch filter if present
-            order: [["id", "DESC"]],
-            include: callIncludes,
-        });
-
-        if (!items) return res.status(404).json({ status: "false", message: "Not qqqfound" });
-
-        const mapped = (items || []).map(mapCallPayload);
-        res.json({ status: "true", data: mapped });
-    } catch (e) {
-        console.error("Call list error:", e);
-        res.status(400).json({ status: "false", message: e.message });
-    }
-};
-
-
-// Get a single call by id (The original exports.getById remains the same)
-exports.getById = async (req, res) => {
-    try {
-        const item = await Call.findByPk(req.params.id, { include: callIncludes });
-
-        if (!item) return res.status(404).json({ status: "false", message: "Nowwwwt found" });
-
-        const mapped = mapCallPayload(item);
-        res.json({ status: "true", data: mapped });
-    } catch (e) {
-        console.error("Call getById error:", e);
-        res.status(400).json({ status: "false", message: e.message });
-    }
-};
-
-// --- NEW FILTERED LIST APIS (Based on image and branch_id requirement) ---
-
-// Helper to filter by type and branch
-const filterCallsByBranchAndType = async (res, branchId, callType) => {
-    try {
-        const where = { call_type: callType };
-        if (branchId) {
-            where.branch_id = branchId;
-        }
-
-        const items = await Call.findAll({
-            where,
-            order: [["id", "DESC"]],
-            include: callIncludes,
-        });
-
-        const mapped = (items || []).map(mapCallPayload);
-        return res.json({ status: "true", data: mapped });
-    } catch (e) {
-        console.error(`Call list by type (${callType}) error:`, e);
-        return res.status(400).json({ status: "false", message: e.message });
-    }
-};
-
-// List Of All Call Type By Branch (General branch list, same as exports.list with enforced param)
-exports.listByBranch = async (req, res) => {
-    const branchId = Number(req.params.id);
-    if (!branchId) {
-        return res.status(400).json({ status: "false", message: "Branch ID is required." });
-    }
-    return exports.list({ query: { branch_id: branchId } }, res); // Re-use general list logic
-};
-
-// GET List By Call Log
-exports.listByCallLog = async (req, res) => {
-    const branchId = Number(req.params.id);
-    return filterCallsByBranchAndType(res, branchId, 'Log');
-};
-
-// GET List By Schedule Call
-exports.listByScheduleCall = async (req, res) => {
-    const branchId = Number(req.params.id);
-    return filterCallsByBranchAndType(res, branchId, 'Schedule');
-};
-
-// GET List By Reschedule Call
-exports.listByRescheduleCall = async (req, res) => {
-    const branchId = Number(req.params.id);
-    return filterCallsByBranchAndType(res, branchId, 'Reschedule');
-};
-
-// GET List By Cancelled Call
-exports.listByCancelledCall = async (req, res) => {
-    const branchId = Number(req.params.id);
-    return filterCallsByBranchAndType(res, branchId, 'Cancelled');
-};
-
-
-exports.remove = async (req, res) => {
-    try {
-        const userId = req.user?.id || null;
-        const call = await Call.findByPk(req.params.id);
-
-        if (!call) return res.status(404).json({ status: "false", message: "Call not found" });
-
-        // --- 1. PROCEED WITH ATOMIC DELETION AND LOGGING ---
-        await sequelize.transaction(async (t) => {
-
-
-            await Task.update(
-                { call_id: null },
-                { where: { call_id: call.id }, transaction: t }
-            );
-
-            // Log Call Deletion
-            if (call.lead_id) {
-                const message = [`Call **${call.subject}** was permanently deleted. Linked Item were unlinked.`];
-                await LeadActivityLog.create({
-                    lead_id: call.lead_id,
-                    user_id: userId,
-                    branch_id: call.branch_id,
-                    field_name: 'Call Deleted',
-                    summary: jsonSummary(message),
-                }, { transaction: t });
-            }
-
-            // Also delete the associated reminder (using transaction `t`)
-            if (call.reminder_id) {
-                await Reminder.destroy({ where: { id: call.reminder_id }, transaction: t });
-            }
-
-            // Destroy the call record
-            await call.destroy({ transaction: t });
-        });
-
-        res.json({ status: "true", message: "Deleted and linked Tasks unlinked successfully." });
-
-    } catch (e) {
-        console.error("Call remove error:", e);
-        // The catch block handles any external dependencies (e.g., Reports, Quotations) 
-        // that still have RESTRICT set, using the professional error handling previously implemented.
-        if (e.message.includes("Cannot delete this Call because")) {
-            return res.status(409).json({ status: "false", message: e.message, error_type: "ForeignKeyConstraintError" });
-        }
-        res.status(400).json({ status: "false", message: e.message });
-    }
-};
-
-// List calls by user (Unchanged)
-exports.listByUser = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const items = await Call.findAll({
-            where: { assigned_user: id },
-            order: [["id", "DESC"]],
-            include: callIncludes,
-        });
-
-        const mapped = (items || []).map(mapCallPayload);
-        res.json({ status: "true", data: mapped });
-    } catch (e) {
-        console.error("Call listByUser error:", e);
         res.status(400).json({ status: "false", message: e.message });
     }
 };

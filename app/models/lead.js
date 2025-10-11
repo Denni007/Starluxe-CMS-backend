@@ -41,7 +41,7 @@ const Lead = sequelize.define("Lead", {
     state: { type: DataTypes.STRING, allowNull: true },
     country: { type: DataTypes.STRING, allowNull: true },
     pincode: { type: DataTypes.STRING, allowNull: true },
-
+    isDelete: { type: DataTypes.BOOLEAN, defaultValue: false },
     created_by: { type: DataTypes.INTEGER, allowNull: false },
     updated_by: { type: DataTypes.INTEGER, allowNull: false },
 }, {

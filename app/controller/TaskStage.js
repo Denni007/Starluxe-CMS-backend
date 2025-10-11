@@ -1,6 +1,4 @@
-// app/controller/TaskStage.controller.js
 const TaskStage = require("../models/TaskStage.js");
-
 
 exports.list = async (req, res) => {
   try {
@@ -13,7 +11,6 @@ exports.list = async (req, res) => {
   }
 };
 
-
 exports.get = async (req, res) => {
   try {
     const item = await TaskStage.findByPk(req.params.id);
@@ -25,7 +22,6 @@ exports.get = async (req, res) => {
     res.status(400).json({ status: "false", message: e.message });
   }
 };
-
 
 exports.create = async (req, res) => {
   try {
@@ -45,7 +41,6 @@ exports.create = async (req, res) => {
   }
 };
 
-
 exports.update = async (req, res) => {
   try {
     const { name } = req.body;
@@ -64,7 +59,6 @@ exports.update = async (req, res) => {
   }
 };
 
-
 exports.remove = async (req, res) => {
   try {
     const item = await TaskStage.findByPk(req.params.id);
@@ -73,9 +67,27 @@ exports.remove = async (req, res) => {
       return res.status(404).json({ status: "false", message: "TaskStage not found" });
     }
 
-    await item.destroy();
-    res.json({ status: "true", message: "TaskStage deleted successfully" });
+    try {
+      await item.destroy();
+      res.json({ status: "true", message: "TaskStage deleted successfully" });
+    } catch (dbError) {
+
+      if (dbError.name === 'SequelizeForeignKeyConstraintError' ||
+        (dbError.original && (dbError.original.code === 'ER_ROW_IS_REFERENCED' || dbError.original.errno === 1451))) {
+
+        const message = "Cannot delete this Task Stage because it is currently linked to one or more Task. Please update or delete the linked Tasks first.";
+
+        return res.status(409).json({ 
+          status: "false",
+          message: message,
+          error_type: "ForeignKeyConstraintError" 
+        });
+      }
+      throw dbError;
+    }
+
   } catch (e) {
+    console.error("TaskStage remove error:", e.message);
     res.status(400).json({ status: "false", message: e.message });
   }
 };

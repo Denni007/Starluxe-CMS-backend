@@ -1,17 +1,10 @@
 const ProductCategory = require("../models/ProductCategory.js");
-const Business = require("../models/business.js");
-const Products = require("../models/product.js"); // To check for foreign key constraints
 
-/**
- * List all Product Categories, optionally filtered by business_id.
- * GET /categories?business_id=1
- */
 exports.list = async (req, res) => {
   try {
     const where = {};
     const businessId = Number(req.query.business_id);
 
-    // Filter by business_id if provided (Crucial for multi-tenancy)
     if (businessId) {
       where.business_id = businessId;
     }
@@ -27,10 +20,6 @@ exports.list = async (req, res) => {
   }
 };
 
-/**
- * Get a single Product Category by ID.
- * GET /categories/:id
- */
 exports.get = async (req, res) => {
   try {
     const item = await ProductCategory.findByPk(req.params.id);
@@ -43,6 +32,7 @@ exports.get = async (req, res) => {
     res.status(400).json({ status: "false", message: e.message });
   }
 };
+
 exports.listByBusiness = async (req, res) => {
   try {
     const item = await ProductCategory.findAll({
@@ -61,10 +51,6 @@ exports.listByBusiness = async (req, res) => {
   }
 };
 
-/**
- * Create one or more Product Categories.
- * POST /categories (Requires business_id in payload)
- */
 exports.create = async (req, res) => {
   try {
     const payload = req.body;
@@ -100,10 +86,6 @@ exports.create = async (req, res) => {
   }
 };
 
-/**
- * Update an existing Product Category.
- * PUT/PATCH /categories/:id
- */
 exports.update = async (req, res) => {
   try {
     const { name, description, business_id } = req.body;
@@ -113,16 +95,12 @@ exports.update = async (req, res) => {
       return res.status(404).json({ status: "false", message: "ProductCategory not found" });
     }
     
-    // NOTE: business_id is typically immutable after creation, but allowing update here
-    // based on provided request body structure if needed.
     const updates = {
         name: name !== undefined ? name : item.name,
         description: description !== undefined ? description : item.description,
         business_id: business_id !== undefined ? business_id : item.business_id
     };
 
-    // Assuming the request body does NOT contain 'color' as the ProductCategory model doesn't have it.
-    
     await item.update(updates);
 
     res.json({ status: "true", data: item });
@@ -134,7 +112,6 @@ exports.update = async (req, res) => {
     res.status(400).json({ status: "false", message: e.message });
   }
 };
-
 
 exports.remove = async (req, res) => {
   try {
