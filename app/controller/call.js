@@ -4,7 +4,7 @@ const Lead = require("../models/lead.js");
 const Task = require("../models/task.js");
 const Reminder = require("../models/reminder.js");
 const Branch = require("../models/branch.js");
-const CallResponseStage = require("../models/CallResponseStage.js");
+const CallDirection = require("../models/CallDirection.js");
 const sequelize = require("../config");
 const { Op } = require("sequelize"); // Import Op for complex queries
 const LeadActivityLog = require("../models/LeadActivityLog.js"); // 🔑 New Import
@@ -31,7 +31,7 @@ const callIncludes = [
     { model: Lead, as: "lead", attributes: ["id", "lead_name"] },
     { model: Task, as: "task", attributes: ["id", "task_name"] },
     { model: Reminder, as: "reminder", attributes: ["id", "reminder_name", "reminder_date", "reminder_time", "reminder_unit", "reminder_value"] },
-    { model: CallResponseStage, as: "callResponseStage", attributes: ["id", "name", "description"] }
+    { model: CallDirection, as: "CallDirection", attributes: ["id", "name", "description"] }
 ];
 
 function mapCallPayload(callInstance) {
@@ -52,10 +52,10 @@ function mapCallPayload(callInstance) {
     }
     delete obj.task;
 
-    if (obj.callResponseStage) {
-        obj.call_response_id = { id: obj.callResponseStage.id, name: obj.callResponseStage.name, description: obj.callResponseStage.description };
+    if (obj.CallDirection) {
+        obj.call_response_id = { id: obj.CallDirection.id, name: obj.CallDirection.name, description: obj.CallDirection.description };
     }
-    delete obj.callResponseStage;
+    delete obj.CallDirection;
 
     if (obj.reminder) {
         obj.reminder_id = { id: obj.reminder.id, reminder_name: obj.reminder.reminder_name, reminder_date: obj.reminder.reminder_date, reminder_time: obj.reminder.reminder_time, reminder_unit: obj.reminder.reminder_unit, reminder_value: obj.reminder.reminder_value };
@@ -72,8 +72,8 @@ exports.create = async (req, res) => {
         const {
             subject,
             branch_id,
-            call_response_id,
-            direction,
+            call_direction_id,
+            call_response,
             start_time,
             end_time, // keep destructuring for backward compatibility
             duration,
@@ -123,8 +123,8 @@ exports.create = async (req, res) => {
             const callData = {
                 subject,
                 branch_id,
-                call_response_id,
-                direction,
+                call_direction_id,
+                call_response,
                 start_time,
                 duration,
                 summary,

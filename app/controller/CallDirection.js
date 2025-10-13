@@ -1,6 +1,4 @@
-// app/controller/CallDirection.controller.js
 const CallDirection = require("../models/CallDirection.js");
-
 
 exports.list = async (req, res) => {
   try {

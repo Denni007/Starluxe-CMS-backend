@@ -16,7 +16,7 @@ const Lead = require("./lead");
 const TaskStage = require("./TaskStage");
 const Task = require("./task");
 const Reminder = require("./reminder");
-const CallResponseStage = require("./CallResponseStage");
+const CallDirection = require("./CallDirection");
 const Call = require("./call");
 const Products = require("./product");
 const LeadActivityLog = require("./LeadActivityLog");
@@ -89,7 +89,7 @@ Reminder.belongsTo(Call, { foreignKey: "call_id", as: "call" });
 Call.hasOne(Reminder, { foreignKey: "call_id", as: "reminder" });
 
 
-// Call ↔ Lead, Task, User, Branch, CallResponseStage
+// Call ↔ Lead, Task, User, Branch, CallDirection
 Call.belongsTo(User, { foreignKey: "assigned_user", as: "assignee" });
 User.hasMany(Call, { foreignKey: "assigned_user", as: "calls" });
 
@@ -102,8 +102,8 @@ Task.hasMany(Call, { foreignKey: "task_id", as: "calls" });
 Call.belongsTo(Branch, { foreignKey: "branch_id", as: "branch" });
 Branch.hasMany(Call, { foreignKey: "branch_id", as: "calls" });
 
-Call.belongsTo(CallResponseStage, { foreignKey: "call_response_id", as: "callResponseStage" });
-CallResponseStage.hasMany(Call, { foreignKey: "call_response_id", as: "calls" });
+Call.belongsTo(CallDirection, { foreignKey: "call_response_id", as: "CallDirection" });
+CallDirection.hasMany(Call, { foreignKey: "call_response_id", as: "calls" });
 
 
 // 🔗 Business ↔ Industry
@@ -189,7 +189,7 @@ module.exports = {
   Task,
   TaskStage,
   Reminder,
-  CallResponseStage,
+  CallDirection,
   Call,
   Products,
   LeadActivityLog,

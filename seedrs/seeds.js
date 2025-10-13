@@ -292,7 +292,7 @@ const {
     TaskStage,
     Task,
     Reminder,
-    CallResponseStage,
+    CallDirection,
     Call, // 🔑 Call model imported
     LeadType,
     Products,
@@ -302,7 +302,6 @@ const {
 } = require("../app/models");
 
 const { PERMISSION_MODULES, PERMISSION_ACTIONS, ROLE } = require("../app/constants/constant");
-const CallDirection = require("../app/models/CallDirection");
 
 // ------------------------------------
 // Config
@@ -961,6 +960,9 @@ exports.seedAdmin = async () => {
                 subject: "Initial Contact Call",
                 branch_id: acmeHq.id,
                 start_time: "2025-10-01T10:00:00Z",
+                end_time: "2025-10-01T10:10:00Z",
+                call_direction_id: 1,
+                call_response: 0,
                 call_type: "Logged",
                 duration: 600,
                 lead_id: lead1.id,
@@ -992,6 +994,9 @@ exports.seedAdmin = async () => {
                 subject: "Globex Partnership Intro",
                 branch_id: globexHq.id,
                 start_time: "2025-10-05T11:30:00Z",
+                end_time: "2025-10-05T11:45:00Z",
+                call_direction_id: 2,
+                call_response: 1,
                 call_type: "Logged",
                 duration: 900,
                 lead_id: lead2.id,
