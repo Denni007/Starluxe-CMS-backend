@@ -302,6 +302,7 @@ const {
 } = require("../app/models");
 
 const { PERMISSION_MODULES, PERMISSION_ACTIONS, ROLE } = require("../app/constants/constant");
+const CallDirection = require("../app/models/CallDirection");
 
 // ------------------------------------
 // Config
@@ -1049,9 +1050,9 @@ exports.seedAdmin = async () => {
             transaction: t,
         });
 
-        const callResponseStages = ["Outgoing", "Incoming", "Missed", "No Response"];
-        for (const name of callResponseStages) {
-            await CallResponseStage.findOrCreate({
+        const callDirection = ["Outgoing", "Incoming", "Missed", "No Response"];
+        for (const name of callDirection) {
+            await CallDirection.findOrCreate({
                 where: { name },
                 defaults: { name, description: name },
                 transaction: t,
