@@ -9,7 +9,7 @@ router.post("/", isAuth, isPermission, callController.create);
 router.patch("/:id", isAuth, isPermission, callController.patch);
 
 
-// Maps to controller functions that hardcode the call_type: 'Log' or 'Schedule'
+// Maps to controller functions that hardcode the call_type: 'Logged' or 'Schedule'
 router.post("/log", isAuth, isPermission, callController.createLogCall);
 router.post("/schedule", isAuth, isPermission, callController.createScheduleCall);
 
