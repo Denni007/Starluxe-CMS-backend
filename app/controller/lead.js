@@ -40,14 +40,23 @@ function mapLeadPayload(leadInstance) {
     return obj;
 }
 
-const leadAttributes = { exclude: ['isDelete'] };
+const leadAttributes = { };
 
 exports.list = async (req, res) => {
     try {
+        const isAdmin = req.user?.is_admin
+        const whereClause = {};
+
+        // If the user is NOT an admin, add the isDelete condition
+        if (!isAdmin) {
+            whereClause.isDelete = false;
+        }
+
+        // Now, execute the query with the dynamically built where clause
         const items = await Lead.findAll({
             attributes: leadAttributes,
             order: [["id", "DESC"]],
-            where: { isDelete: false },
+            where: whereClause,
         });
 
         if (!items) return res.status(404).json({ status: "false", message: "Not found" });
@@ -90,9 +99,22 @@ exports.getById = async (req, res) => {
 exports.listByBranch = async (req, res) => {
     try {
         const { id } = req.params;
+        const isAdmin = req.user?.is_admin
+        const whereClause = {};
+        // If the user is NOT an admin, add the isDelete condition
+        if (!isAdmin) {
+            whereClause.branch_id= id
+            // whereClause.isDelete = false;
+        }
+        else{
+            whereClause.branch_id= id
+            // whereClause.isDelete = false;
+        }
+        // Now, execute the query with the dynamically built where clause
+        
         const items = await Lead.findAll({
             attributes: leadAttributes,
-            where: { branch_id: id, isDelete: false },
+            where: whereClause,
             order: [["id", "DESC"]],
             include: [
                 { model: User, as: "assignee", attributes: ["id", "user_name", "email", "first_name", "last_name"] },
@@ -104,8 +126,9 @@ exports.listByBranch = async (req, res) => {
 
             ],
         });
-
         const mapped = (items || []).map(mapLeadPayload);
+        console.log(mapped)
+
         res.json({ status: "true", data: mapped });
     } catch (e) {
         console.error("Lead listByBranch error:", e);

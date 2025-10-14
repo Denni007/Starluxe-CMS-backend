@@ -8,7 +8,7 @@ const router = express.Router();
 router.post("/", CallDirectionCtrl.create);
 router.get("/", CallDirectionCtrl.list);
 router.get("/:id", CallDirectionCtrl.get);
-router.put("/:id", CallDirectionCtrl.update);
+router.patch("/:id", CallDirectionCtrl.update);
 router.delete("/:id", CallDirectionCtrl.remove);
 
 module.exports = router;
