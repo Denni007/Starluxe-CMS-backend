@@ -31,12 +31,11 @@ const callIncludes = [
     { model: Lead, as: "lead", attributes: ["id", "lead_name"] },
     { model: Task, as: "task", attributes: ["id", "task_name"] },
     { model: Reminder, as: "reminder", attributes: ["id", "reminder_name", "reminder_date", "reminder_time", "reminder_unit", "reminder_value"] },
-    { model: CallDirection, as: "CallDirection", attributes: ["id", "name", "description"] }
+    { model: CallDirection, as: "callDirection", attributes: ["id", "name", "description"] }
 ];
 
 function mapCallPayload(callInstance) {
     const obj = callInstance.toJSON();
-
     if (obj.assignee) {
         obj.assigned_user = { id: obj.assignee.id, user_name: obj.assignee.user_name, email: obj.assignee.email };
     }
@@ -52,16 +51,18 @@ function mapCallPayload(callInstance) {
     }
     delete obj.task;
 
-    if (obj.CallDirection) {
-        obj.call_response_id = { id: obj.CallDirection.id, name: obj.CallDirection.name, description: obj.CallDirection.description };
+    if (obj.callDirection) {
+        // 2. Create a new, clean property to hold the data
+        obj.call_direction_id = { id: obj.callDirection.id, name: obj.callDirection.name, description: obj.callDirection.description };
     }
-    delete obj.CallDirection;
+    // 3. Delete the original included object and the foreign key field for a cleaner response
+    delete obj.callDirection;
 
     if (obj.reminder) {
         obj.reminder_id = { id: obj.reminder.id, reminder_name: obj.reminder.reminder_name, reminder_date: obj.reminder.reminder_date, reminder_time: obj.reminder.reminder_time, reminder_unit: obj.reminder.reminder_unit, reminder_value: obj.reminder.reminder_value };
     }
     delete obj.reminder;
-
+    // console.log(obj)
     return obj;
 }
 
@@ -203,6 +204,7 @@ exports.create = async (req, res) => {
 
 exports.patch = async (req, res) => {
     try {
+        // console.log(req.body);
         const userId = req.user?.id || null;
         const { call_type, start_time, reminder, ...restBody } = req.body;
         const reminderData = req.body.reminder;
@@ -248,7 +250,7 @@ exports.patch = async (req, res) => {
 
         // Fields to track
         const callFieldsToTrack = [
-            "subject", "direction", "start_time", "duration", "summary",
+            "subject", "call_direction_id", "start_time", "duration", "summary",
             "lead_id", "task_id", "contact_number", "assigned_user", "branch_id",
             "call_response_id",
         ];
@@ -490,9 +492,9 @@ exports.list = async (req, res) => {
             order: [["id", "DESC"]],
             include: callIncludes,
         });
-
+        //  console.log( items)
         if (!items) return res.status(404).json({ status: "false", message: "Not qqqfound" });
-
+        
         const mapped = (items || []).map(mapCallPayload);
         res.json({ status: "true", data: mapped });
     } catch (e) {

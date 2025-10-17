@@ -127,7 +127,7 @@ exports.listByBranch = async (req, res) => {
             ],
         });
         const mapped = (items || []).map(mapLeadPayload);
-        console.log(mapped)
+        // console.log(mapped)
 
         res.json({ status: "true", data: mapped });
     } catch (e) {

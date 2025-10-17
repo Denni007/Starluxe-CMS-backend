@@ -102,8 +102,8 @@ Task.hasMany(Call, { foreignKey: "task_id", as: "calls" });
 Call.belongsTo(Branch, { foreignKey: "branch_id", as: "branch" });
 Branch.hasMany(Call, { foreignKey: "branch_id", as: "calls" });
 
-Call.belongsTo(CallDirection, { foreignKey: "call_response_id", as: "CallDirection" });
-CallDirection.hasMany(Call, { foreignKey: "call_response_id", as: "calls" });
+Call.belongsTo(CallDirection, { foreignKey: "call_direction_id", as: "callDirection" });
+CallDirection.hasMany(Call, { foreignKey: "call_direction_id", as: "calls" });
 
 
 // 🔗 Business ↔ Industry
