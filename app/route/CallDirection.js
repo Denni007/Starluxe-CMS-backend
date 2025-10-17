@@ -1,6 +1,5 @@
 // app/routes/industry.routes.js
 const express = require("express");
-const { isAuth } = require("../middleware/utill.js");
 const CallDirectionCtrl = require("../controller/CallDirection.js");
 
 const router = express.Router();

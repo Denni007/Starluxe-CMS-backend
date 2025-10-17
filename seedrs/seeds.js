@@ -953,6 +953,18 @@ exports.seedAdmin = async () => {
             transaction: t,
         });
 
+        const callDirections = ['Outgoing', 'Incoming', 'Internal'];
+        for (const name of callDirections) {
+            await CallDirection.findOrCreate({
+                where: { name },
+                defaults: { name },
+                transaction: t
+            });
+        }
+
+        const [outgoingDir] = await CallDirection.findOrCreate({ where: { name: "Outgoing" }, transaction: t });
+        const [incomingDir] = await CallDirection.findOrCreate({ where: { name: "Incoming" }, transaction: t });
+
         // Create some calls (needed for task/reminder linking)
         const [call1] = await Call.findOrCreate({
             where: { subject: "Initial Contact Call" },
@@ -961,7 +973,7 @@ exports.seedAdmin = async () => {
                 branch_id: acmeHq.id,
                 start_time: "2025-10-01T10:00:00Z",
                 end_time: "2025-10-01T10:10:00Z",
-                call_direction_id: 1,
+                call_direction_id: outgoingDir.id,
                 call_response: 0,
                 call_type: "Logged",
                 duration: 600,
@@ -995,7 +1007,7 @@ exports.seedAdmin = async () => {
                 branch_id: globexHq.id,
                 start_time: "2025-10-05T11:30:00Z",
                 end_time: "2025-10-05T11:45:00Z",
-                call_direction_id: 2,
+                call_direction_id: incomingDir.id,
                 call_response: 1,
                 call_type: "Logged",
                 duration: 900,
@@ -1054,15 +1066,6 @@ exports.seedAdmin = async () => {
             },
             transaction: t,
         });
-
-        const callDirection = ["Outgoing", "Incoming", "Missed", "No Response"];
-        for (const name of callDirection) {
-            await CallDirection.findOrCreate({
-                where: { name },
-                defaults: { name, description: name },
-                transaction: t,
-            });
-        }
 
         // (M) Reminders
         const [task1Reminder] = await Reminder.findOrCreate({
