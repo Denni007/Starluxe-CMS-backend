@@ -7,7 +7,7 @@ const Branch = require("../models/branch.js");
 const CallDirection = require("../models/.js");
 const sequelize = require("../config");
 const { Op } = require("sequelize"); // Import Op for complex queries
-const LeadActivityLog = require("../models/leadActivityLog.js"); // 🔑 New Import
+const LeadActivityLog = require("../models/LeadActivityLog.js"); // 🔑 New Import
 
 // Helper to log summary as JSON array string
 const jsonSummary = (messages) => JSON.stringify(Array.isArray(messages) ? messages : [messages]);

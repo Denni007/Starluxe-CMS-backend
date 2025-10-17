@@ -6,21 +6,22 @@ const Business = require("./business");
 const Branch = require("./branch");
 const Role = require("./role");
 const Permission = require("./permission");
-const UserBranchRole = require("./userBranchRole");
-const RolePermission = require("./rolePermission");
-const LeadSource = require("./leadSource");
-const LeadStage = require("./leadStage");
-const LeadType = require("./leadType");
-const CustomerType = require("./customerType");
+const UserBranchRole = require("./UserBranchRole");
+const RolePermission = require("./RolePermission");
 const Lead = require("./lead");
-const TaskStage = require("./taskStage");
 const Task = require("./task");
 const Reminder = require("./reminder");
-const CallDirection = require("./callDirection");
 const Call = require("./call");
 const Products = require("./product");
-const LeadActivityLog = require("./leadActivityLog");
-const ProductCategory = require("./productCategory");
+const LeadStage = require("./LeadStage");
+const LeadSource = require("./LeadSource");
+const LeadType = require("./LeadType");
+const TaskStage = require("./TaskStage");
+const CustomerType = require("./CustomerType");
+const CallDirection = require("./CallDirection");
+const LeadActivityLog = require("./LeadActivityLog");
+const ProductCategory = require("./ProductCategory");
+
 
 
 

@@ -3,7 +3,7 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/index");
 
-const callDirection = sequelize.define("callDirection", {
+const CallDirection = sequelize.define("CallDirection", {
     id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
@@ -24,4 +24,4 @@ const callDirection = sequelize.define("callDirection", {
     updatedAt: "updated_at",
 });
 
-module.exports = callDirection;
+module.exports = CallDirection;
