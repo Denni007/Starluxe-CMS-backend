@@ -1,6 +1,6 @@
-const CallDirection = require("../models/.js");
+const { CallDirection } = require("../models");
 
-exports.list = async (req, res) => {
+export async function list(req, res) {
   try {
     const items = await CallDirection.findAll({
       order: [["name", "ASC"]],
@@ -9,10 +9,10 @@ exports.list = async (req, res) => {
   } catch (e) {
     res.status(400).json({ status: "false", message: e.message });
   }
-};
+}
 
 
-exports.get = async (req, res) => {
+export async function get(req, res) {
   try {
     const item = await CallDirection.findByPk(req.params.id);
     if (!item) {
@@ -22,10 +22,10 @@ exports.get = async (req, res) => {
   } catch (e) {
     res.status(400).json({ status: "false", message: e.message });
   }
-};
+}
 
 
-exports.create = async (req, res) => {
+export async function create(req, res) {
   try {
     const payload = req.body;
     let items;
@@ -41,10 +41,10 @@ exports.create = async (req, res) => {
     console.error("❌ Error creating industries:", e.message);
     res.status(400).json({ status: "false", message: e.message });
   }
-};
+}
 
 
-exports.update = async (req, res) => {
+export async function update(req, res) {
   try {
     const { name } = req.body;
     const item = await CallDirection.findByPk(req.params.id);
@@ -60,10 +60,10 @@ exports.update = async (req, res) => {
   } catch (e) {
     res.status(400).json({ status: "false", message: e.message });
   }
-};
+}
 
 
-exports.remove = async (req, res) => {
+export async function remove(req, res) {
   try {
     const item = await CallDirection.findByPk(req.params.id);
 
@@ -76,4 +76,4 @@ exports.remove = async (req, res) => {
   } catch (e) {
     res.status(400).json({ status: "false", message: e.message });
   }
-};
+}
