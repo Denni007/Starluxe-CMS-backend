@@ -1,12 +1,12 @@
 // app/controller/lead.controller.js
 const Lead = require("../models/lead.js");
 const User = require("../models/user.js");
-const LeadStage = require("../models/LeadStage.js");
-const LeadSource = require("../models/LeadSource.js");
-const LeadType = require("../models/LeadType.js");
-const CustomerType = require("../models/CustomerType.js");
+const LeadStage = require("../models/leadStage.js");
+const LeadSource = require("../models/leadSource.js");
+const LeadType = require("../models/leadType.js");
+const CustomerType = require("../models/customerType.js");
 const Products = require("../models/product.js");
-const LeadActivityLog = require("../models/LeadActivityLog.js"); // Assumed import
+const LeadActivityLog = require("../models/leadActivityLog.js"); // Assumed import
 
 // Helper function to safely get a string/JSON value for logging
 const getLogValue = (val) => {

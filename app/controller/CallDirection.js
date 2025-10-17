@@ -1,4 +1,4 @@
-const CallDirection = require("../models/CallDirection.js");
+const CallDirection = require("../models/.js");
 
 exports.list = async (req, res) => {
   try {
