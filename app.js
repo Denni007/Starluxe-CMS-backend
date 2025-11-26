@@ -20,6 +20,7 @@ app.use(function (req, res, next) {
   next();
 });
 app.use(express.json({ limit: "50mb" }));
+app.get("/", (_req, res) => res.send("✅ API home"));
 
 // Health check
 app.get("/test", (_req, res) => res.send("✅ API workidng"));
