@@ -14,10 +14,10 @@ const PORT = process.env.PORT || 4000;
 app.use(cors());
 
 app.use(express.json({ limit: "50mb" }));
-app.get("/", (_req, res) => res.send("✅ API home"));
+app.get("/", (_req, res) => res.send("✅ API homes"));
 
 // Health check
-app.get("/test", (_req, res) => res.send("✅ API workidng"));
+app.get("/test", (_req, res) => res.send("✅ API workidn s"));
 
 // Mount routes (server won’t accept requests until after listen())
 app.use("/api", routes);
