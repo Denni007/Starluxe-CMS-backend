@@ -12,13 +12,7 @@ const PORT = process.env.PORT || 4000;
 
 // Middlewares
 app.use(cors());
-app.use(function (req, res, next) {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Credentials", "true");
-  res.header("Access-Control-Allow-Methods", "GET, PUT, POST, PATCH, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization, x-client-key, x-client-token, x-client-secret");
-  next();
-});
+
 app.use(express.json({ limit: "50mb" }));
 app.get("/", (_req, res) => res.send("✅ API home"));
 
