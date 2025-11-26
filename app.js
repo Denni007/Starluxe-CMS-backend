@@ -22,7 +22,7 @@ app.use(function (req, res, next) {
 app.use(express.json({ limit: "50mb" }));
 
 // Health check
-app.get("/test", (_req, res) => res.send("✅ API working"));
+app.get("/test", (_req, res) => res.send("✅ API workidng"));
 
 // Mount routes (server won’t accept requests until after listen())
 app.use("/api", routes);
