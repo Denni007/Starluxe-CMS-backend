@@ -19,7 +19,7 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: "50mb" }));
 
 // Health check
-app.get("/test", (_req, res) => res.send("✅ API working"));
+app.get("/test", (_req, res) => res.send("✅ API working nice in the main"));
 
 // Mount routes (server won’t accept requests until after listen())
 app.use("/api", routes);
