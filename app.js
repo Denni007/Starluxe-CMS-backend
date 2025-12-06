@@ -9,15 +9,17 @@ const { seedAdmin } = require("./seedrs/seeds"); // ⬅️ use "seeders", not "s
 
 const app = express();
 const PORT = process.env.PORT || 4000;
-
-// Middlewares
-app.use(cors());
-
+const corsOptions = {
+  origin: (origin, callback) => {
+    callback(null, true);  // accept any origin dynamically
+  },
+  credentials: true,
+};
+app.use(cors(corsOptions));
 app.use(express.json({ limit: "50mb" }));
-app.get("/", (_req, res) => res.send("✅ API homes"));
 
 // Health check
-app.get("/test", (_req, res) => res.send("✅ API workidn s"));
+app.get("/test", (_req, res) => res.send("✅ API working"));
 
 // Mount routes (server won’t accept requests until after listen())
 app.use("/api", routes);
@@ -27,7 +29,6 @@ app.use((err, _req, res, _next) => {
   console.error("❌ Error:", err.stack);
   res.status(400).json({ message: "Server error", error: err.message });
 });
-
 
 (async () => {
   try {
