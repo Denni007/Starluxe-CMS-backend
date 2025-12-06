@@ -20,6 +20,7 @@ app.use(express.json({ limit: "50mb" }));
 
 // Health check
 app.get("/test", (_req, res) => res.send("✅ API working nice in the main"));
+app.get("/", (_req, res) => res.send("✅ API not nice in the main"));
 
 // Mount routes (server won’t accept requests until after listen())
 app.use("/api", routes);
