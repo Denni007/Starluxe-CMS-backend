@@ -13,11 +13,21 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 app.use(cors());
+const corsOptions = {
+  origin: (origin, callback) => {
+    callback(null, true);  // accept any origin dynamically
+  },
+  credentials: true,
+};
+app.use(cors(corsOptions));
 app.use(express.json({ limit: "50mb" }));
 
 app.use("/api", initRoutes);
 
 app.get("/test", (_req, res) => res.send("✅ API working"));
+// Health check
+app.get("/test", (_req, res) => res.send("✅ API working nice in the main"));
+app.get("/", (_req, res) => res.send("✅ API not nice in the "));
 
 /* =====================================================
    BOOTSTRAP (ORDER IS NOW CORRECT)
