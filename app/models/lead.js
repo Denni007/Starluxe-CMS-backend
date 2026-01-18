@@ -18,7 +18,7 @@ const Lead = sequelize.define("Lead", {
     tags: { type: DataTypes.JSON, allowNull: true },
 
     customer_type_id: { type: DataTypes.INTEGER, allowNull: false },
-    lead_type_id:  { type: DataTypes.INTEGER, allowNull: false },
+    lead_type_id: { type: DataTypes.INTEGER, allowNull: false },
     remark: { type: DataTypes.TEXT, allowNull: true },
     description: { type: DataTypes.TEXT, allowNull: true },
     assigned_user: { type: DataTypes.INTEGER, allowNull: true },
@@ -50,5 +50,7 @@ const Lead = sequelize.define("Lead", {
     createdAt: "created_at",
     updatedAt: "updated_at",
 });
+
+
 
 module.exports = Lead;

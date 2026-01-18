@@ -43,7 +43,7 @@ exports.create = async (req, res) => {
 
 exports.update = async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, description, order, color } = req.body;
     const item = await TaskStage.findByPk(req.params.id);
 
     if (!item) {
@@ -51,6 +51,9 @@ exports.update = async (req, res) => {
     }
 
     item.name = name || item.name;
+    item.description = description || item.description;
+    item.color = color || item.color;
+    item.order = order || item.order;
     await item.save();
 
     res.json({ status: "true", data: item });
@@ -77,10 +80,10 @@ exports.remove = async (req, res) => {
 
         const message = "Cannot delete this Task Stage because it is currently linked to one or more Task. Please update or delete the linked Tasks first.";
 
-        return res.status(409).json({ 
+        return res.status(409).json({
           status: "false",
           message: message,
-          error_type: "ForeignKeyConstraintError" 
+          error_type: "ForeignKeyConstraintError"
         });
       }
       throw dbError;

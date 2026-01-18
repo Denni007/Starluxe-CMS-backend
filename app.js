@@ -1,61 +1,47 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-require("dotenv").config();
+const path = require("path");
 
-const sequelize = require("./app/config");     // Sequelize instance
-require("./app/models");                       // ⬅️ ensure ALL models are registered once
-const routes = require("./app/route");
-const { seedAdmin } = require("./seedrs/seeds"); // ⬅️ use "seeders", not "seedrs"
+const sequelize = require("./app/config");   // Sequelize instance
+// require("./app/models");                     // Register models
+
+const initRoutes = require("./app/route");
+const { seedAdmin } = require("./seedrs/seeds");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-// Middlewares
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
 
-// Health check
+app.use("/api", initRoutes);
+
 app.get("/test", (_req, res) => res.send("✅ API working"));
 
-// Mount routes (server won’t accept requests until after listen())
-app.use("/api", routes);
-
-// Global error handler
-app.use((err, _req, res, _next) => {
-  console.error("❌ Error:", err.stack);
-  res.status(400).json({ message: "Server error", error: err.message });
-});
-
+/* =====================================================
+   BOOTSTRAP (ORDER IS NOW CORRECT)
+===================================================== */
 (async () => {
   try {
     await sequelize.authenticate();
+    console.log("✅ DB connected");
 
-    // Choose sync strategy via env:
-    // DB_SYNC=safe | alter | force
-    const mode = (process.env.DB_SYNC || "safe").toLowerCase();
+    if (process.env.NODE_ENV !== "production") {
+      await sequelize.sync({ alter: true });
+      console.log("🔁 DB synced");
 
-    if (mode === "force") {
-      await sequelize.sync({ force: true });
-    } else if (mode === "alter") {
-      if (sequelize.getDialect() === "sqlite") {
-        await sequelize.query("PRAGMA foreign_keys = OFF");
-        await sequelize.sync({ alter: true });
-        await sequelize.query("PRAGMA foreign_keys = ON");
-      } else {
-        await sequelize.sync({ alter: true });
+      if (process.env.SEED_FORCE === "1") {
+        await seedAdmin(); // ✅ SAFE NOW
+        console.log("🌱 Seeders executed");
       }
-    } else {
-      await sequelize.sync(); // safe default: creates missing tables, no drops
     }
 
-    await seedAdmin(); // <-- run seeds AFTER tables exist
-
-    // 4) Start server
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running at http://localhost:${PORT}`);
-    });
+    app.listen(PORT, () =>
+      console.log(`🚀 Server running at http://localhost:${PORT}`)
+    );
   } catch (err) {
-    console.error("❌ Startup Error:", err);
+    console.error("❌ Startup failed:", err);
     process.exit(1);
   }
 })();

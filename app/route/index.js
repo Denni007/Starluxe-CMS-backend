@@ -32,4 +32,6 @@ router.use("/reminders", require("./reminder"));
 router.use("/call-direction", require("./CallDirection"));
 router.use("/calls", require("./call"));
 
+router.use("/dashboard", require("./dashboard"));
+
 module.exports = router;

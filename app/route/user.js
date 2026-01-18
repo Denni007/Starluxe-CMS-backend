@@ -1,10 +1,7 @@
 // app/routes/users.routes.js
 const express = require("express");
 const UsersCtrl = require("../controller/users.js");
-const { isAuth, isAdmin } = require("../middleware/utill.js");
-const { checkPermission } = require("../middleware/checkPermission.js");
-// const adminAuth = require("../middleware/adminAuth.js");
-// const { MODULES, ACTIONS } = require("../constant/permissions");
+const { isAuth, isAdmin, isPermission } = require("../middleware/utill.js");
 
 const router = express.Router();
 
@@ -28,10 +25,10 @@ router.put("/:id", isAuth, isAdmin, UsersCtrl.update);
 router.patch("/:id", isAuth, isAdmin, UsersCtrl.patch);
 
 router.put("/users/bulk", UsersCtrl.bulkUpdate);
-router.post("/users/:id/password", UsersCtrl.changePassword);
+router.post("/:id/password", isAuth, isPermission, UsersCtrl.changePassword);
 
 // Delete
-router.delete("/users/:id", UsersCtrl.remove);
+router.delete("/:id", isAuth, isPermission, UsersCtrl.remove);
 router.delete("/users/bulk", UsersCtrl.bulkRemove);
 
 module.exports = router;

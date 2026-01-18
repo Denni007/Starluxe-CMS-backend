@@ -48,7 +48,7 @@ exports.create = async (req, res) => {
 
 exports.update = async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, description } = req.body;
     const item = await LeadSource.findByPk(req.params.id);
 
     if (!item) {
@@ -56,6 +56,7 @@ exports.update = async (req, res) => {
     }
 
     item.name = name || item.name;
+    item.description = description || item.description;
     await item.save();
 
     res.json({ status: "true", data: item });
@@ -83,10 +84,10 @@ exports.remove = async (req, res) => {
 
         const message = "Cannot delete this Lead Source because it is currently linked to one or more Leads. Please update or delete the linked Leads first.";
 
-        return res.status(409).json({ 
+        return res.status(409).json({
           status: "false",
           message: message,
-          error_type: "ForeignKeyConstraintError" 
+          error_type: "ForeignKeyConstraintError"
         });
       }
       throw dbError;
