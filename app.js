@@ -7,7 +7,7 @@ const sequelize = require("./app/config");   // Sequelize instance
 // require("./app/models");                     // Register models
 
 const initRoutes = require("./app/route");
-const { seedAdmin } = require("./seedrs/seeds");
+const { existingData, existingPermission } = require("./seedrs/custom_seeder");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -24,9 +24,9 @@ app.use(express.json({ limit: "50mb" }));
 
 app.use("/api", initRoutes);
 
-app.get("/test", (_req, res) => res.send("✅ API working"));
+app.get("/test", (_req, res) => res.send("✅ API sworking"));
 // Health check
-app.get("/test", (_req, res) => res.send("✅ API working nice in the main"));
+app.get("/tests", (_req, res) => res.send("✅ API working d nice in the main"));
 app.get("/", (_req, res) => res.send("✅ API not nice in the "));
 
 /* =====================================================
@@ -38,12 +38,13 @@ app.get("/", (_req, res) => res.send("✅ API not nice in the "));
     console.log("✅ DB connected");
 
     if (process.env.NODE_ENV !== "production") {
-      await sequelize.sync({ alter: true });
+      // await sequelize.sync();
       console.log("🔁 DB synced");
 
       if (process.env.SEED_FORCE === "1") {
-        await seedAdmin(); // ✅ SAFE NOW
-        console.log("🌱 Seeders executed");
+        await existingData();
+        await existingPermission();
+        console.log("🌱 Custom Seeders executed");
       }
     }
 

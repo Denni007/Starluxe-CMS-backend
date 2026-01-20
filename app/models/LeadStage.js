@@ -11,11 +11,11 @@ const LeadStage = sequelize.define("LeadStage", {
 
   name: {
     type: DataTypes.STRING,
-    allowNull: false, 
+    allowNull: false,
   },
   order: {
-    type: DataTypes.NUMBER,
-    allowNull: true, 
+    type: DataTypes.INTEGER,
+    allowNull: true,
   },
   color: {
     type: DataTypes.STRING,

@@ -14,7 +14,7 @@ const TaskStage = sequelize.define("TaskStage", {
     allowNull: false,
   },
   order: {
-    type: DataTypes.NUMBER,
+    type: DataTypes.INTEGER,
     allowNull: true,
   },
   color: {

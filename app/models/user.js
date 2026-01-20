@@ -4,17 +4,17 @@ const sequelize = require("../config/index");
 const User = sequelize.define("User", {
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
 
-  user_name: { type: DataTypes.STRING, allowNull: false, unique: true },
+  user_name: { type: DataTypes.STRING, allowNull: false },
   first_name: { type: DataTypes.STRING, allowNull: false },
   last_name: { type: DataTypes.STRING, allowNull: false },
 
   email: {
-    type: DataTypes.STRING, allowNull: false, unique: true,
+    type: DataTypes.STRING, allowNull: false,
     validate: { isEmail: { msg: "Invalid email format" } },
   },
 
   mobile_number: {
-    type: DataTypes.STRING, allowNull: false, unique: true,
+    type: DataTypes.STRING, allowNull: false,
     validate: { is: { args: /^[0-9]{10}$/, msg: "Mobile number must be exactly 10 digits" } },
   },
 
@@ -38,6 +38,23 @@ const User = sequelize.define("User", {
   timestamps: true,
   createdAt: "created_at",
   updatedAt: "updated_at",
+  indexes: [
+    {
+      unique: true,
+      fields: ["user_name"],
+      name: "users_user_name_unique",
+    },
+    {
+      unique: true,
+      fields: ["email"],
+      name: "users_email_unique",
+    },
+    {
+      unique: true,
+      fields: ["mobile_number"],
+      name: "users_mobile_number_unique",
+    },
+  ],
 });
 
 module.exports = User;
