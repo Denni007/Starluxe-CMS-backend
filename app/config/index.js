@@ -72,13 +72,6 @@ console.log("Database Config:", {
   DB_PASSWORD: DB_PASSWORD ? DB_PASSWORD : null,
   DB_HOST,
 });
-try {
-  sequelize.authenticate();
-  sequelize.sync({ alter: false });
-  console.log("Connection has been established successfully.");
-} catch (error) {
-  console.error("Unable to connect to the database:", error);
-  // process.exit(1);
-}
+
 
 module.exports = sequelize;

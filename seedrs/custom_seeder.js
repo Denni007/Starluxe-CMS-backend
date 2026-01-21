@@ -30,7 +30,7 @@ const existingData = async () => {
                 last_name: "Ghelani",
                 email: "vipul@example.com",
                 mobile_number: "9988776655",
-                password: "$2a$10$Mb31UZbFdVgXmEnXadWx4O2VGzguRS0tIw0XX.DbOzNoPzm8Awja6", // copied hash
+                password: await bcrypt.hash("123456", 10),
                 gender: "Male", // Default
                 is_active: true,
                 is_email_verify: true,

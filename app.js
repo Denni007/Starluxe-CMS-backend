@@ -38,7 +38,7 @@ app.get("/", (_req, res) => res.send("✅ API not nice in the "));
     console.log("✅ DB connected");
 
     if (process.env.NODE_ENV !== "production") {
-      // await sequelize.sync();
+      await sequelize.sync({ alter: true });
       console.log("🔁 DB synced");
 
       if (process.env.SEED_FORCE === "1") {

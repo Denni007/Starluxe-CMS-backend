@@ -42,17 +42,14 @@ const User = sequelize.define("User", {
     {
       unique: true,
       fields: ["user_name"],
-      name: "users_user_name_unique",
     },
     {
       unique: true,
       fields: ["email"],
-      name: "users_email_unique",
     },
     {
       unique: true,
       fields: ["mobile_number"],
-      name: "users_mobile_number_unique",
     },
   ],
 });
