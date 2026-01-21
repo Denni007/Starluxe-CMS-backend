@@ -28,23 +28,8 @@ jobs:
           VPS_IP: ${{ secrets.VPS_IP }}
         run: |
           sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no $SSH_USER@$VPS_IP << 'EOF'
-            TARGET_DIR="/root/cms/Starluxe-CMS-backend"
-            REPO_URL="https://github.com/Denni007/Starluxe-CMS-backend.git"
-
-            if [ -d "$TARGET_DIR/.git" ]; then
-              echo "Repository exists. Pulling latest changes..."
-              cd $TARGET_DIR
-              git pull origin main
-            else
-              echo "Repository not found. Cloning..."
-              mkdir -p /root/cms
-              cd /root/cms
-              # Remove if exists but invalid
-              rm -rf Starluxe-CMS-backend
-              git clone $REPO_URL
-              cd Starluxe-CMS-backend
-            fi
-
+            cd /root/cms/Starluxe-CMS-backend
+            git pull origin main
             npm install
             pm2 restart cms-backend
           EOF
