@@ -27,7 +27,7 @@ app.use("/api", initRoutes);
 app.get("/test", (_req, res) => res.send("✅ API sworking"));
 // Health check
 app.get("/tests", (_req, res) => res.send("✅ API working d nice in the main"));
-app.get("/", (_req, res) => res.send("✅ API not nice in the "));
+app.get("/", (_req, res) => res.send("✅ API not nice in the sql "));
 
 /* =====================================================
    BOOTSTRAP (ORDER IS NOW CORRECT)

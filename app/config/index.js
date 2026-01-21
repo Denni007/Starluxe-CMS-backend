@@ -59,7 +59,7 @@ const { DB_USERNAME, DB_NAME, DB_PASSWORD, DB_HOST } = process.env;
 const sequelize = process.env.DATABASE_URL
   ? new Sequelize(process.env.DATABASE_URL, {
     dialect: "mysql",
-    logging: console.log,
+    // logging: console.log,
   })
   : new Sequelize(
     DB_NAME,
@@ -68,15 +68,9 @@ const sequelize = process.env.DATABASE_URL
     {
       host: DB_HOST,
       dialect: "mysql",
-      logging: console.log,
+      // logging: console.log,
     }
   );
-console.log("Database Config:", {
-  DB_NAME,
-  DB_USERNAME,
-  DB_PASSWORD: DB_PASSWORD ? DB_PASSWORD : null,
-  DB_HOST,
-});
 
 
 module.exports = sequelize;
