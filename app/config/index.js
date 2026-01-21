@@ -56,8 +56,8 @@ const { config } = require("dotenv");
 config();
 const { DB_USERNAME, DB_NAME, DB_PASSWORD, DB_HOST } = process.env;
 
-const sequelize = process.env.DATABASE_URL
-  ? new Sequelize(process.env.DATABASE_URL, {
+const sequelize = (process.env.DATABASE_URL && process.env.DATABASE_URL.trim().length > 0)
+  ? new Sequelize(process.env.DATABASE_URL.trim(), {
     dialect: "mysql",
     // logging: console.log,
   })
