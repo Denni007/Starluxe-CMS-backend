@@ -56,16 +56,21 @@ const { config } = require("dotenv");
 config();
 const { DB_USERNAME, DB_NAME, DB_PASSWORD, DB_HOST } = process.env;
 
-const sequelize = new Sequelize(
-  DB_NAME,      // ✅ REQUIRED
-  DB_USERNAME,
-  DB_PASSWORD,
-  {
-    host: DB_HOST,
-    dialect: 'mysql',
-    logging: console.log,   // optional
-  }
-);
+const sequelize = process.env.DATABASE_URL
+  ? new Sequelize(process.env.DATABASE_URL, {
+    dialect: "mysql",
+    logging: console.log,
+  })
+  : new Sequelize(
+    DB_NAME,
+    DB_USERNAME,
+    DB_PASSWORD,
+    {
+      host: DB_HOST,
+      dialect: "mysql",
+      logging: console.log,
+    }
+  );
 console.log("Database Config:", {
   DB_NAME,
   DB_USERNAME,
