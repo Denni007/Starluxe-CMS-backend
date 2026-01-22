@@ -2,6 +2,9 @@
   command = "npm install"
   functions = "functions"
 
+[build.environment]
+  SECRETS_SCAN_OMIT_KEYS = "DB_USERNAME,DB_HOST,PORT"
+
 [[redirects]]
   from = "/*"
   to = "/.netlify/functions/api"
