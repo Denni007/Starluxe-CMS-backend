@@ -32,7 +32,10 @@ app.get("/", (_req, res) => res.send("✅ API not nice in the sql "));
 /* =====================================================
    BOOTSTRAP (ORDER IS NOW CORRECT)
 ===================================================== */
-(async () => {
+/* =====================================================
+   BOOTSTRAP (ORDER IS NOW CORRECT)
+===================================================== */
+const startServer = async () => {
   try {
     await sequelize.authenticate();
     console.log("✅ DB connected");
@@ -55,6 +58,10 @@ app.get("/", (_req, res) => res.send("✅ API not nice in the sql "));
     console.error("❌ Startup failed:", err);
     process.exit(1);
   }
-})();
+};
+
+if (require.main === module) {
+  startServer();
+}
 
 module.exports = app;
