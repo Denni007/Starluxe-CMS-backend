@@ -52,6 +52,8 @@
 // module.exports = sequelize; // ✅ EXPORT IMMEDIATELY
 
 const { Sequelize } = require("sequelize");
+const mysql2 = require('mysql2');
+
 const { config } = require("dotenv");
 config();
 const { DB_USERNAME, DB_NAME, DB_PASSWORD, DB_HOST } = process.env;
@@ -59,6 +61,8 @@ const { DB_USERNAME, DB_NAME, DB_PASSWORD, DB_HOST } = process.env;
 const sequelize = (process.env.DATABASE_URL && process.env.DATABASE_URL.trim().length > 0)
   ? new Sequelize(process.env.DATABASE_URL.trim(), {
     dialect: "mysql",
+    dialectModule: require('mysql2'),
+
     // logging: console.log,
   })
   : new Sequelize(
@@ -68,6 +72,7 @@ const sequelize = (process.env.DATABASE_URL && process.env.DATABASE_URL.trim().l
     {
       host: DB_HOST,
       dialect: "mysql",
+      dialectModule: require('mysql2'),
       // logging: console.log,
     }
   );
