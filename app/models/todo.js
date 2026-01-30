@@ -52,7 +52,7 @@ const Todo = sequelize.define('Todo', {
     }
 }, {
     tableName: "todos",
-    timestamps: true,
+    timestamps: false,
     createdAt: "created_at",
     updatedAt: "updated_at",
 });
