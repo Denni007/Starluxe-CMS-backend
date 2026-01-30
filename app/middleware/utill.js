@@ -15,7 +15,7 @@ async function isPermission(req, res, next) {
 
     const methodMap = { GET: "view", POST: "create", PUT: "update", PATCH: "update", DELETE: "delete" };
     const action = (methodMap[req.method] || "access").toString().toLowerCase();
-
+      
     // Resolve module name
     const headerModule = req.headers["x-permission-module"] || req.query?.permission_module || req.body?.permission_module;
     let moduleName = headerModule;

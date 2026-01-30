@@ -34,4 +34,7 @@ router.use("/calls", require("./call"));
 
 router.use("/dashboard", require("./dashboard"));
 
+router.use("/todos", require("./todo"));
+router.use("/comments", require("./comment"));
+
 module.exports = router;

@@ -21,6 +21,8 @@ const CustomerType = require("./CustomerType");
 const CallDirection = require("./CallDirection");
 const LeadActivityLog = require("./LeadActivityLog");
 const ProductCategory = require("./ProductCategory");
+const Todo = require("./todo");
+const Comment = require("./comment");
 
 
 
@@ -171,6 +173,16 @@ Role.hasMany(UserBranchRole, { foreignKey: "role_id", as: "memberships", onDelet
 UserBranchRole.belongsTo(User, { foreignKey: "user_id", as: "user" });
 UserBranchRole.belongsTo(Branch, { foreignKey: "branch_id", as: "branch" });
 UserBranchRole.belongsTo(Role, { foreignKey: "role_id", as: "role" });
+Todo.belongsTo(User, { as: 'assignee', foreignKey: 'assigneeId' });
+Todo.hasMany(Comment, { as: 'comments', foreignKey: 'todoId' });
+Todo.belongsTo(User, { as: 'creator', foreignKey: 'created_by' });
+Todo.belongsTo(User, { as: 'updater', foreignKey: 'updated_by' });
+Todo.belongsTo(User, { as: 'approver', foreignKey: 'approved_by' });
+Todo.belongsTo(Branch, { as: 'branch', foreignKey: 'branchId' });
+
+Comment.belongsTo(User, { as: 'author', foreignKey: 'authorId' });
+Comment.belongsTo(Todo, { as: 'todo', foreignKey: 'todoId' });
+Comment.belongsTo(User, { as: 'updater', foreignKey: 'updated_by' });
 
 module.exports = {
   sequelize,
@@ -195,6 +207,8 @@ module.exports = {
   Products,
   LeadActivityLog,
   ProductCategory,
+  Todo,
+  Comment
 };
 
 
