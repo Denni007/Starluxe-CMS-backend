@@ -25,7 +25,7 @@ const { existingData, existingPermission } = require("./seedrs/custom_seeder");
 
 app.use("/api", initRoutes);
 
-app.get("/test", (_req, res) => res.send("✅ API sworking"));
+app.get("/test", (_req, res) => res.send("✅ API working"));
 // Health check
 app.get("/tests", (_req, res) => res.send("✅ API working d nice in the main"));
 app.get("/", (_req, res) => res.send("✅ API not nice in the sql "));
