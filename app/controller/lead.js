@@ -126,6 +126,7 @@ exports.listByBranch = async (req, res) => {
 
             ],
         });
+        console.log(items);
         const mapped = (items || []).map(mapLeadPayload);
         // console.log(mapped)
 

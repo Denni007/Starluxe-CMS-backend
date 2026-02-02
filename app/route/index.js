@@ -14,11 +14,11 @@ router.use("/users", require("./user"));
 router.use("/userrolebranch", require("./UserRoleBranch"));
 router.use("/permissions", require("./permission"));
 router.use("/role-permissions", require("./RolePermission"));
+router.use("/customer-type", require("./BusinessCustomerType"));
 
 router.use("/lead-source", require("./LeadSource"));
 router.use("/lead-stage", require("./LeadStage"));
 router.use("/lead-type", require("./LeadType"));
-router.use("/customer-type", require("./CustomerType"));
 router.use("/product-category", require("./ProductCategory"));
 router.use("/products", require("./product"));
 router.use("/leads", require("./lead"));

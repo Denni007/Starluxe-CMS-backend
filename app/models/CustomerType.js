@@ -1,4 +1,3 @@
-// app/models/LeadType.js
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/index");
 
@@ -8,15 +7,17 @@ const CustomerType = sequelize.define("CustomerType", {
     autoIncrement: true,
     primaryKey: true,
   },
-
   name: {
     type: DataTypes.STRING,
     allowNull: false, 
   },
-
   description: {
     type: DataTypes.STRING,
     allowNull: true,
+  },
+  business_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
   },
 }, {
   tableName: "customer_types",
