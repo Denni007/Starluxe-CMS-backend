@@ -36,5 +36,8 @@ router.use("/dashboard", require("./dashboard"));
 
 router.use("/todos", require("./todo"));
 router.use("/comments", require("./comment"));
+router.use("/stickynotes", require("./StickyNote"));
+router.use("/meetings", require("./Meeting"));
+router.use("/chat", require("./chat"));
 
 module.exports = router;

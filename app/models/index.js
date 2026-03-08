@@ -11,7 +11,6 @@ const RolePermission = require("./RolePermission");
 const Lead = require("./lead");
 const Task = require("./task");
 const TaskStage = require("./TaskStage");
-
 const Reminder = require("./reminder");
 const Call = require("./call");
 const Products = require("./product");
@@ -24,6 +23,10 @@ const LeadActivityLog = require("./LeadActivityLog");
 const ProductCategory = require("./ProductCategory");
 const Todo = require("./todo");
 const Comment = require("./comment");
+const StickyNote = require("./StickyNote");
+const Meeting = require("./Meeting");
+const Client = require("./Client");
+const ChatMessage = require("./ChatMessage");
 
 
 // Associations
@@ -141,6 +144,12 @@ Branch.belongsTo(User, { as: "creator", foreignKey: "created_by", onDelete: "RES
 Branch.belongsTo(User, { as: "updater", foreignKey: "updated_by", onDelete: "RESTRICT", onUpdate: "CASCADE" });
 Role.belongsTo(User, { as: "creator", foreignKey: "created_by", onDelete: "RESTRICT", onUpdate: "CASCADE" });
 Role.belongsTo(User, { as: "updater", foreignKey: "updated_by", onDelete: "RESTRICT", onUpdate: "CASCADE" });
+StickyNote.belongsTo(User, { as: "creator", foreignKey: "created_by", onDelete: "RESTRICT", onUpdate: "CASCADE" });
+StickyNote.belongsTo(User, { as: "updater", foreignKey: "updated_by", onDelete: "RESTRICT", onUpdate: "CASCADE" });
+Meeting.belongsTo(User, { as: "creator", foreignKey: "created_by", onDelete: "RESTRICT", onUpdate: "CASCADE" });
+Meeting.belongsTo(User, { as: "updater", foreignKey: "updated_by", onDelete: "RESTRICT", onUpdate: "CASCADE" });
+Client.belongsTo(User, { as: "creator", foreignKey: "created_by", onDelete: "RESTRICT", onUpdate: "CASCADE" });
+Client.belongsTo(User, { as: "updater", foreignKey: "updated_by", onDelete: "RESTRICT", onUpdate: "CASCADE" });
 
 // Role ⇄ Permission (many-to-many)
 Role.belongsToMany(Permission, {
@@ -186,6 +195,24 @@ Comment.belongsTo(User, { as: 'author', foreignKey: 'authorId' });
 Comment.belongsTo(Todo, { as: 'todo', foreignKey: 'todoId' });
 Comment.belongsTo(User, { as: 'updater', foreignKey: 'updated_by' });
 
+StickyNote.belongsTo(Branch, { foreignKey: 'branch_id', as: 'branch' });
+Branch.hasMany(StickyNote, { foreignKey: 'branch_id', as: 'stickynotes' });
+
+Meeting.belongsTo(Branch, { foreignKey: 'branch_id', as: 'branch' });
+Branch.hasMany(Meeting, { foreignKey: 'branch_id', as: 'meetings' });
+
+Client.belongsTo(Branch, { foreignKey: 'branch_id', as: 'branch' });
+Branch.hasMany(Client, { foreignKey: 'branch_id', as: 'clients' });
+
+// 🔗 ChatMessage ↔ User (Sender/Receiver), Branch
+ChatMessage.belongsTo(User, { as: "sender", foreignKey: "sender_id" });
+ChatMessage.belongsTo(User, { as: "receiver", foreignKey: "receiver_id" });
+ChatMessage.belongsTo(Branch, { foreignKey: "branch_id" });
+
+User.hasMany(ChatMessage, { as: "sent_messages", foreignKey: "sender_id" });
+User.hasMany(ChatMessage, { as: "received_messages", foreignKey: "receiver_id" });
+Branch.hasMany(ChatMessage, { foreignKey: "branch_id" });
+
 module.exports = {
   sequelize,
   User,
@@ -210,5 +237,9 @@ module.exports = {
   LeadActivityLog,
   ProductCategory,
   Todo,
-  Comment
+  Comment,
+  StickyNote,
+  Meeting,
+  Client,
+  ChatMessage
 };

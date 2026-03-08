@@ -58,6 +58,13 @@ function normalizeUserBody(body) {
     is_admin: typeof body.is_admin === 'boolean' ? body.is_admin : undefined,
     is_email_verify: typeof body.is_email_verify === 'boolean' ? body.is_email_verify : undefined,
     is_active: typeof body.is_active === 'boolean' ? body.is_active : undefined,
+    dob: body.dob,
+    alias_name: body.alias_name ? String(body.alias_name).trim() : undefined,
+    father_name: body.father_name ? String(body.father_name).trim() : undefined,
+    mother_name: body.mother_name ? String(body.mother_name).trim() : undefined,
+    pan: body.pan ? String(body.pan).trim() : undefined,
+    aadhaar: body.aadhaar ? String(body.aadhaar).trim() : undefined,
+    image_url: body.image_url ? String(body.image_url).trim() : undefined,
 
   };
 }
@@ -402,7 +409,22 @@ exports.update = async (req, res) => {
     // Prevent password update here
     delete b.password;
 
-    const dupMsg = await uniquenessChecks(
+    const requiredFields = [
+      'first_name',
+      'last_name',
+      'email',
+      'mobile_number',
+      'user_name',
+      'gender',
+    ];
+
+    for (const field of requiredFields) {
+        if (!b[field]) {
+            return res.status(400).json({ status: 'false', message: `${field} is required` });
+        }
+    }
+
+    const dupMsg = await checkUserUniqueness(
       { email: b.email, user_name: b.user_name, mobile_number: b.mobile_number },
       id
     );
@@ -418,6 +440,14 @@ exports.update = async (req, res) => {
         gender: b.gender,
         is_admin: typeof b.is_admin === "boolean" ? b.is_admin : undefined,
         is_email_verify: typeof b.is_email_verify === "boolean" ? b.is_email_verify : undefined,
+        is_active: typeof b.is_active === "boolean" ? b.is_active : undefined,
+        dob: b.dob,
+        alias_name: b.alias_name,
+        father_name: b.father_name,
+        mother_name: b.mother_name,
+        pan: b.pan,
+        aadhaar: b.aadhaar,
+        image_url: b.image_url,
         updated_by: req.user?.id || null,
       },
       { where: { id } }
@@ -639,7 +669,6 @@ exports.getBranchUsers = async (req, res) => {
     if (!branchId) return res.status(400).json({ status: "false", message: "branch_id required" });
 
     const users = await User.findAll({
-      attributes: ["id", "email", "user_name", "first_name", "last_name", "is_admin", "is_active"],
       include: [{
         model: UserBranchRole,
         as: "memberships",

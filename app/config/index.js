@@ -71,7 +71,7 @@ const sequelize = (process.env.DATABASE_URL && process.env.DATABASE_URL.trim().l
       host: DB_HOST,
       port: Number(DB_PORT) || 3306,
       dialect: "mysql",
-      // logging: console.log,
+      logging: false,
     }
   );
 
