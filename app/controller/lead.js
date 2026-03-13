@@ -218,6 +218,118 @@ exports.create = async (req, res) => {
     }
 };
 
+
+exports.bulkCreate = async (req, res) => {
+    try {
+        const leads = req.body.leads;
+
+        if (!Array.isArray(leads)) {
+            return res.status(400).json({ status: "false", message: "Leads data must be an array" });
+        }
+
+        const createdLeads = [];
+
+        for (const leadData of leads) {
+            const {
+                lead_name, lead_stage_id, lead_source_id, branch_id, contact_number, email,
+                lead_type_id, remark, description, assigned_user, customer_type_id, tags,
+                business_name, website, location, alias, product_id, amount,
+                dates, address_1, landmark, city, state, country, pincode,
+            } = leadData;
+
+            if (!lead_name || !lead_source_id || !branch_id || !contact_number || !dates) {
+                return res.status(400).json({
+                    status: "false",
+                    message: "lead_name, lead_source_id, branch_id, contact_number, dates are required for all leads"
+                });
+            }
+
+            if (!Array.isArray(contact_number) || contact_number.length === 0) {
+                return res.status(400).json({
+                    status: "false",
+                    message: "contact_number must be a non-empty array"
+                });
+            }
+
+            if (email && !Array.isArray(email)) {
+                return res.status(400).json({
+                    status: "false",
+                    message: "email must be an array if provided"
+                });
+            }
+
+            if (typeof dates !== "object" || Array.isArray(dates)) {
+                return res.status(400).json({
+                    status: "false",
+                    message: "dates must be an object"
+                });
+            }
+
+            // 🔎 CHECK IF PHONE ALREADY EXISTS
+            const existingLead = await Lead.findOne({
+                where: {
+                    contact_number: contact_number
+                }
+            });
+
+            if (existingLead) {
+                continue; // skip this lead
+            }
+
+            const lead = await Lead.create({
+                lead_name,
+                lead_stage_id: typeof lead_stage_id === "number" ? lead_stage_id : undefined,
+                lead_source_id,
+                branch_id,
+                contact_number,
+                email: email || null,
+                lead_type_id: lead_type_id || null,
+                customer_type_id: customer_type_id || null,
+                tags: tags || null,
+                remark: remark || null,
+                description: description || null,
+                assigned_user: assigned_user || null,
+                business_name: business_name || null,
+                website: website || null,
+                location: location || null,
+                alias: alias || null,
+                product_id: product_id || null,
+                amount: amount || null,
+                dates,
+                address_1: address_1 || null,
+                landmark: landmark || null,
+                city: city || null,
+                state: state || null,
+                country: country || null,
+                pincode: pincode || null,
+                created_by: assigned_user,
+                updated_by: assigned_user,
+            });
+
+            const creationSummary = [`Lead **${lead.lead_name}** created`];
+
+            await LeadActivityLog.create({
+                lead_id: lead.id,
+                user_id: assigned_user,
+                branch_id: lead.branch_id,
+                field_name: 'Creation',
+                old_value: null,
+                new_value: null,
+                summary: JSON.stringify(creationSummary),
+            });
+
+            const finalLead = lead.toJSON();
+            delete finalLead.isDelete;
+
+            createdLeads.push(finalLead);
+        }
+
+        res.status(201).json({ status: "true", data: createdLeads });
+
+    } catch (e) {
+        res.status(400).json({ status: "false", message: e.message });
+    }
+};
 exports.patch = async (req, res) => {
     try {
         const userId = req.user?.id || null;

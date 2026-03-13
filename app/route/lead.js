@@ -11,6 +11,7 @@ router.get("/:id", isAuth, isPermission, ctrl.getById);
 router.get("/branch/:id", isAuth, isPermission, ctrl.listByBranch);
 router.get("/user/:id", isAuth, isPermission, ctrl.listByUser);
 router.post("/", isAuth, isPermission, ctrl.create);
+router.post("/bulk", ctrl.bulkCreate);
 router.patch("/:id", isAuth, isPermission, ctrl.patch);
 router.delete("/:id", isAuth, isPermission, ctrl.remove);
 
