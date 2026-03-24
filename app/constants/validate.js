@@ -96,10 +96,22 @@ const {
   purchaseDate,
   wastageName,
   maintenance_validation,
+  costingSettings,
+  proformaInvoice
 } = require("./validation");
 
 module.exports.validation = function (method) {
   switch (method) {
+    // Add these cases before the default block in validate.js
+    case "create_proforma":
+      return [
+        "invoiceNo", "date", "name", "businessName", "address",
+        "gstin", "items", "totalAmount", "bankName"
+      ];
+    case "update_proforma":
+      return ["name", "businessName", "address", "items", "totalAmount"];
+    case "costing_validation":
+      return ["resinRate", "brassRate", "profitMargin", "multiplier", "tierMargins"];
     case "userLogin":
       return [mobileno, LoginPassword];
     case "check_user":

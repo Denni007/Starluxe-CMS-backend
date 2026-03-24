@@ -27,9 +27,13 @@ const StickyNote = require("./StickyNote");
 const Meeting = require("./Meeting");
 const Client = require("./Client");
 const ChatMessage = require("./ChatMessage");
+const ProformaInvoice = require("./ProformaInvoice");
 
 
 // Associations
+
+ProformaInvoice.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
+ProformaInvoice.belongsTo(User, { foreignKey: 'updated_by', as: 'updater' });
 
 // 🔗 Business ↔ CustomerType
 CustomerType.belongsTo(Business, { foreignKey: 'business_id', as: 'business' });
@@ -241,5 +245,6 @@ module.exports = {
   StickyNote,
   Meeting,
   Client,
-  ChatMessage
+  ChatMessage,
+  ProformaInvoice
 };

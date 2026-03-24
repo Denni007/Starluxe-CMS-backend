@@ -40,4 +40,8 @@ router.use("/stickynotes", require("./StickyNote"));
 router.use("/meetings", require("./Meeting"));
 router.use("/chat", require("./chat"));
 
+router.use("/costing", require("./costing"));
+router.use("/proforma-invoices", require("./proforma"));
+
+
 module.exports = router;

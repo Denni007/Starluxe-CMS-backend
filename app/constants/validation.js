@@ -2571,3 +2571,67 @@ exports.maintenance_validation = async (req, res, next) => {
   }
   return next();
 };
+
+exports.costingSettings = function (req, res, next) {
+  const schema = Joi.object({
+    resinRate: Joi.number().required().messages({
+      "number.base": "Resin Rate must be a number",
+      "any.required": "Resin Rate is required",
+    }),
+    brassRate: Joi.number().required().messages({
+      "number.base": "Brass Rate must be a number",
+      "any.required": "Brass Rate is required",
+    }),
+    profitMargin: Joi.number().required(),
+    multiplier: Joi.number().required(),
+    tierMargins: Joi.object({
+      star: Joi.number().required(),
+      gold: Joi.number().required(),
+      silver: Joi.number().required(),
+    }).required(),
+    updatedBy: Joi.string().optional(),
+  });
+
+  const { error } = schema.validate(req.body);
+  if (error) {
+    return res.status(400).json({ status: false, message: error.details[0].message });
+  }
+  next();
+};
+
+exports.proformaInvoice = function (req, res, next) {
+  const schema = Joi.object({
+      invoiceNo: Joi.string().required(),
+      date: Joi.date().required(),
+      name: Joi.string().required(),
+      businessName: Joi.string().required(),
+      address: Joi.string().required(),
+      gstin: Joi.string().required(),
+      state: Joi.string().required(),
+      stateCode: Joi.string().required(),
+      items: Joi.array().items(
+          Joi.object({
+              id: Joi.string().required(),
+              description: Joi.string().required(),
+              hsnCode: Joi.string().required(),
+              quantity: Joi.number().required(),
+              rate: Joi.number().required(),
+              per: Joi.string().required(),
+              amount: Joi.number().required()
+          })
+      ).min(1).required(),
+      totalAmount: Joi.number().required(),
+      totalAmountInWords: Joi.string().required(),
+      bankName: Joi.string().required(),
+      accountNo: Joi.string().required(),
+      ifscCode: Joi.string().required(),
+      branchName: Joi.string().required(),
+      branchId: Joi.string().required()
+  });
+
+  const { error } = schema.validate(req.body);
+  if (error) {
+      return res.status(400).json({ status: "false", message: error.details[0].message });
+  }
+  next();
+};
