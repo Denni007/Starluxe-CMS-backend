@@ -111,7 +111,7 @@ module.exports.validation = function (method) {
     case "update_proforma":
       return ["name", "businessName", "address", "items", "totalAmount"];
     case "costing_validation":
-      return ["resinRate", "brassRate", "profitMargin", "multiplier", "tierMargins"];
+      return ["business_id", "resinRate", "brassRate", "profitMargin", "multiplier", "tierMargins"];
     case "userLogin":
       return [mobileno, LoginPassword];
     case "check_user":

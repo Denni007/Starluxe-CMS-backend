@@ -7,6 +7,11 @@ const CostingSetting = sequelize.define('CostingSetting', {
         primaryKey: true,
         allowNull: false
     },
+    business_id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        allowNull: false
+    },
     resinRate: { type: DataTypes.FLOAT, defaultValue: 0 },
     brassRate: { type: DataTypes.FLOAT, defaultValue: 0 },
     profitMargin: { type: DataTypes.FLOAT, defaultValue: 0 },

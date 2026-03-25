@@ -2574,27 +2574,24 @@ exports.maintenance_validation = async (req, res, next) => {
 
 exports.costingSettings = function (req, res, next) {
   const schema = Joi.object({
-    resinRate: Joi.number().required().messages({
-      "number.base": "Resin Rate must be a number",
-      "any.required": "Resin Rate is required",
-    }),
-    brassRate: Joi.number().required().messages({
-      "number.base": "Brass Rate must be a number",
-      "any.required": "Brass Rate is required",
-    }),
-    profitMargin: Joi.number().required(),
-    multiplier: Joi.number().required(),
-    tierMargins: Joi.object({
-      star: Joi.number().required(),
-      gold: Joi.number().required(),
-      silver: Joi.number().required(),
-    }).required(),
-    updatedBy: Joi.string().optional(),
+      business_id: Joi.number().required().messages({
+          "any.required": "Required Field: business_id"
+      }),
+      resinRate: Joi.number().required(),
+      brassRate: Joi.number().required(),
+      profitMargin: Joi.number().required(),
+      multiplier: Joi.number().required(),
+      tierMargins: Joi.object({
+          star: Joi.number().required(),
+          gold: Joi.number().required(),
+          silver: Joi.number().required()
+      }).required(),
+      updatedBy: Joi.string().optional()
   });
 
   const { error } = schema.validate(req.body);
   if (error) {
-    return res.status(400).json({ status: false, message: error.details[0].message });
+      return res.status(400).json({ status: "false", message: error.details[0].message });
   }
   next();
 };
