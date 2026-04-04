@@ -108,10 +108,10 @@ module.exports.validation = function (method) {
       return ["name", "rate_per_kg"];
 
     case "create_recipe":
-      return ["name", "line", "business_id", "total_usage", "total_amount", "final_value", "items"];
+      return ["name", "line", "business_id", "total_usage", "total_amount", "per_kg_value", "production_cost", "final_value", "items"];
 
     case "update_recipe":
-      return ["name", "line", "total_usage", "total_amount", "final_value", "items"];
+      return ["name", "line", "total_usage", "total_amount", "per_kg_value", "production_cost", "final_value", "items"];
 
     case "create_proforma":
       return [
@@ -121,7 +121,7 @@ module.exports.validation = function (method) {
     case "update_proforma":
       return ["name", "businessName", "address", "items", "totalAmount"];
     case "costing_validation":
-      return ["business_id", "resinRate", "brassRate", "profitMargin", "multiplier", "tierMargins","refMargin", "cdMargin", "todMargin"];
+      return ["business_id", "resinRate", "brassRate", "profitMargin", "multiplier", "tierMargins", "refMargin", "cdMargin", "todMargin"];
     case "userLogin":
       return [mobileno, LoginPassword];
     case "check_user":

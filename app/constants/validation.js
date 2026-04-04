@@ -2646,6 +2646,8 @@ exports.recipeValidation = function (req, res, next) {
       total_usage: Joi.number().required(),
       total_amount: Joi.number().required(),
       final_value: Joi.number().required(),
+      per_kg_value: Joi.number().required(),
+      production_cost: Joi.number().optional(),
       items: Joi.array().items(
           Joi.object({
               raw_material_id: Joi.number().required(),

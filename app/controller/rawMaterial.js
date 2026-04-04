@@ -70,16 +70,21 @@ exports.update = async (req, res) => {
                 0
             );
 
-            // ✅ correct business logic
-            const finalValue =
+            // ✅ NEW CALCULATION
+            const perKgValue =
                 totalUsage > 0
                     ? totalAmount / totalUsage
                     : 0;
+
+            const productionCost = parseFloat(recipe.production_cost || 0);
+
+            const finalValue = perKgValue + productionCost;
 
             return recipe.update({
                 items: updatedItems,
                 total_usage: parseFloat(totalUsage.toFixed(2)),
                 total_amount: parseFloat(totalAmount.toFixed(2)),
+                per_kg_value: parseFloat(perKgValue.toFixed(2)),
                 final_value: parseFloat(finalValue.toFixed(2)),
                 updated_by: userId
             });
