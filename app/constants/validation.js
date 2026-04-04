@@ -2574,27 +2574,32 @@ exports.maintenance_validation = async (req, res, next) => {
 
 exports.costingSettings = function (req, res, next) {
   const schema = Joi.object({
-      business_id: Joi.number().required().messages({
-          "any.required": "Required Field: business_id"
-      }),
-      resinRate: Joi.number().required(),
-      brassRate: Joi.number().required(),
-      profitMargin: Joi.number().required(),
-      multiplier: Joi.number().required(),
-      tierMargins: Joi.object({
-          star: Joi.number().required(),
-          gold: Joi.number().required(),
-          silver: Joi.number().required()
-      }).required(),
-      updatedBy: Joi.string().optional()
+    business_id: Joi.number().required().messages({
+      "any.required": "Required Field: business_id",
+    }),
+    recipeId: Joi.string().allow(null, "").optional(), // New field
+    resinRate: Joi.number().required(),
+    brassRate: Joi.number().required(),
+    profitMargin: Joi.number().required(),
+    multiplier: Joi.number().required(),
+    tierMargins: Joi.object({
+      star: Joi.number().required(),
+      gold: Joi.number().required(),
+      silver: Joi.number().required(),
+    }).required(),
+    refMargin: Joi.number().optional(),
+    cdMargin: Joi.number().optional(), 
+    todMargin: Joi.number().optional(),
+    updatedBy: Joi.string().optional(),
   });
 
   const { error } = schema.validate(req.body);
   if (error) {
-      return res.status(400).json({ status: "false", message: error.details[0].message });
+    return res.status(400).json({ status: "false", message: error.details[0].message });
   }
   next();
 };
+
 
 exports.proformaInvoice = function (req, res, next) {
   const schema = Joi.object({
@@ -2629,6 +2634,52 @@ exports.proformaInvoice = function (req, res, next) {
   const { error } = schema.validate(req.body);
   if (error) {
       return res.status(400).json({ status: "false", message: error.details[0].message });
+  }
+  next();
+};
+
+exports.recipeValidation = function (req, res, next) {
+  const schema = Joi.object({
+      name: Joi.string().required(),
+      line: Joi.string().required(),
+      business_id: Joi.number().required(),
+      total_usage: Joi.number().required(),
+      total_amount: Joi.number().required(),
+      final_value: Joi.number().required(),
+      items: Joi.array().items(
+          Joi.object({
+              raw_material_id: Joi.number().required(),
+              usage: Joi.number().required(),
+              percentage: Joi.number().required(),
+              total: Joi.number().required()
+          })
+      ).min(1).required()
+  });
+
+  const { error } = schema.validate(req.body);
+  if (error) {
+      return res.status(400).json({ status: "false", message: error.details[0].message });
+  }
+  next();
+};
+
+exports.rawMaterialValidation = function (req, res, next) {
+  const schema = Joi.object({
+    name: Joi.string().required().messages({
+      "any.required": "Name is required",
+    }),
+    rate_per_kg: Joi.number().required().messages({
+      "number.base": "Rate per kg must be a number",
+      "any.required": "Rate per kg is required",
+    }),
+    business_id: Joi.number().required().messages({
+      "any.required": "Business ID is required",
+    })
+  });
+
+  const { error } = schema.validate(req.body);
+  if (error) {
+    return res.status(400).json({ status: "false", message: error.details[0].message });
   }
   next();
 };

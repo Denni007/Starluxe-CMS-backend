@@ -42,6 +42,9 @@ router.use("/chat", require("./chat"));
 
 router.use("/costing", require("./costing"));
 router.use("/proforma-invoices", require("./proforma"));
+router.use("/raw-materials", require("./rawMaterial"));
+router.use("/recipes", require("./recipe"));
+
 
 
 module.exports = router;

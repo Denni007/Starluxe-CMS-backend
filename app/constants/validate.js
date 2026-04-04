@@ -96,13 +96,23 @@ const {
   purchaseDate,
   wastageName,
   maintenance_validation,
-  costingSettings,
-  proformaInvoice
 } = require("./validation");
 
 module.exports.validation = function (method) {
   switch (method) {
-    // Add these cases before the default block in validate.js
+    // app/constants/validate.js
+    case "create_raw_material":
+      return ["name", "rate_per_kg", "business_id"];
+
+    case "update_raw_material":
+      return ["name", "rate_per_kg"];
+
+    case "create_recipe":
+      return ["name", "line", "business_id", "total_usage", "total_amount", "final_value", "items"];
+
+    case "update_recipe":
+      return ["name", "line", "total_usage", "total_amount", "final_value", "items"];
+
     case "create_proforma":
       return [
         "invoiceNo", "date", "name", "businessName", "address",
@@ -111,7 +121,7 @@ module.exports.validation = function (method) {
     case "update_proforma":
       return ["name", "businessName", "address", "items", "totalAmount"];
     case "costing_validation":
-      return ["business_id", "resinRate", "brassRate", "profitMargin", "multiplier", "tierMargins"];
+      return ["business_id", "resinRate", "brassRate", "profitMargin", "multiplier", "tierMargins","refMargin", "cdMargin", "todMargin"];
     case "userLogin":
       return [mobileno, LoginPassword];
     case "check_user":

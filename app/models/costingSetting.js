@@ -19,6 +19,10 @@ const CostingSetting = sequelize.define('CostingSetting', {
     starMargin: { type: DataTypes.FLOAT, defaultValue: 0 },
     goldMargin: { type: DataTypes.FLOAT, defaultValue: 0 },
     silverMargin: { type: DataTypes.FLOAT, defaultValue: 0 },
+    refMargin: { type: DataTypes.FLOAT, defaultValue: 0 },
+    cdMargin: { type: DataTypes.FLOAT, defaultValue: 0 },
+    todMargin: { type: DataTypes.FLOAT, defaultValue: 0 },
+    recipe_id: { type: DataTypes.STRING, allowNull: true }, 
     created_by: { type: DataTypes.INTEGER, allowNull: false },
     updated_by: { type: DataTypes.INTEGER, allowNull: false },
 }, {

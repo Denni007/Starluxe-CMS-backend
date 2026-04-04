@@ -28,9 +28,11 @@ const Meeting = require("./Meeting");
 const Client = require("./Client");
 const ChatMessage = require("./ChatMessage");
 const ProformaInvoice = require("./ProformaInvoice");
-
+const CostingSetting = require('./costingSetting');
+const Recipe = require('./recipe');
 
 // Associations
+CostingSetting.belongsTo(Recipe, { foreignKey: 'recipe_id', as: 'recipeDetail' });
 
 ProformaInvoice.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
 ProformaInvoice.belongsTo(User, { foreignKey: 'updated_by', as: 'updater' });
@@ -86,7 +88,7 @@ Task.belongsTo(Lead, { foreignKey: "lead_id", as: "lead" });
 Lead.hasMany(Task, { foreignKey: "lead_id", as: "tasks" });
 
 Task.belongsTo(Call, { foreignKey: 'call_id', as: 'call' });
-Call.hasMany(Task, { foreignKey: 'call_id', as: 'tasks' }); 
+Call.hasMany(Task, { foreignKey: 'call_id', as: 'tasks' });
 
 
 // reminders ↔ User, Lead, Task
